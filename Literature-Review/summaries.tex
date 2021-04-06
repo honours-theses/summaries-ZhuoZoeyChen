@@ -1,0 +1,63 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib}
+
+\title{Literature Review Summaries}
+\author{Zhuo Chen}
+
+\begin{document}
+
+\maketitle
+
+This document includes short summaries for all papers in the related field of $\lambda$-calculus and its cost models. 
+This document is written in order to assist Zhuo's PhD project.
+
+\newpage 
+
+\section{(In)Efficiency and reasonable cost models~\cite{DBLP:journals/entcs/Accattoli18}}
+\paragraph{Author:} Beniamino Accattoli 
+\paragraph{Summary:} This paper is about time cost models for the $\lambda$-calculus. It discusses the relationship of the evaluation 
+strategies being reasonable and being efficient as well as them being standard and being reasonable.
+
+This paper first discusses the relationship between being reasonable and efficient and emphasises that they are two 
+different properties. It then talks about cost models for Turing machines and $\lambda$-calculus and their properties. 
+It points out that the key features for reasonable strategies are termination and sub-term property, 
+
+This paper then go into dept about how to encode a reasonable model (e.g. Turing machine) in $\lambda$-calculus and 
+how to encode $\lambda$-calculus in a reasonable model (e.g. Turing machine/RAM). The latter is the more complicated one 
+as it needs to spend a lot of time dealing with size explosion.
+
+Next, this paper talks about useful sharing, including its definition, importance, where it can be used and difficulty of using it. 
+
+Following that, this paper discusses optimisation strategies to improve the efficiency of 
+reasonable cost models, strategies including optimal sequential evaluation, optimal parallel evaluation, sharing of sub-terms and sharing 
+of computations and reasonable sharing of computations. 
+
+In the end, the paper talks about the relationship between standard and reasonable through its explanation about 
+why leftmost-outermost strategy is reasonable.
+
+\paragraph{Keywords:} Lambda calculus, cost models, sharing, computational complexity, functional programming.
+
+\section{The theory of calculi with explicit substitutions revisited~\cite{DBLP:conf/csl/Kesner07}}
+\paragraph{Author:} Delia Kesner
+\paragraph{Summary:} This paper first talks about the survey they have done about work in the domain of calculi with explicit substitution, 
+then establish a general theory of explicit substitutions for lambda-calculus that enjoys fundamental properties including confluence on 
+metaterms (and thus on terms), simulation of one-step $\beta$-reduction, strong normalisation of typed terms, preservation of $\beta$-strong normalisation, 
+simulation of one-step $\beta$-reduction and full composition. 
+
+In the survey part, it talks about the issues that calculi with explicit substitution are suffering from 
+, mentions Mellies' counter-example, proposes three possible solutions and their respective issues. It then
+addresses calculi with explicit substitution, the properties that they satisfy and the ones that they don't.
+
+The paper then introduces $\lambda$es-calculus, which leads to the second part of the paper. 
+The paper first introduces $\lambda$es-calculus's syntax, including its definition, equation C and reductions rules.
+It then shows how to prove that $\lambda$es-calculus is confluent on meta-terms and 
+how to prove that it preserves β-strong normalisation. The latter is proved by introducing another two 
+helper calculus $\lambda$esw-calculus and $\Gamma_I$-calculus. In the end it introduces The typed $\lambda$es-calculus.
+
+\paragraph{Keywords:} Lambda calculus, explicit substitutions, survey, $\lambda$es-calculus.
+
+\bibliographystyle{te}
+\bibliography{refs}
+
+\end{document}

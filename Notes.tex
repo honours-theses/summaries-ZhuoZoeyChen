@@ -1,0 +1,78 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+
+\title{Background Knowledge Notes}
+\author{Zhuo Chen}
+
+\begin{document}
+
+\maketitle
+
+This document includes notes on the relevant background knowledge in the field of $\lambda$-calculus.
+This document is written in order to assist Zhuo's PhD project.
+
+\newpage 
+
+\begin{enumerate}
+    \item \textbf{Evaluation Context}: (E, E[·]) is a $\lambda$-term or a metaexpression 
+representing a family of $\lambda$-terms with a special variable [·] called the 
+hole. Every evaluation context E[·] represents a \textit{context} rule:
+$$\frac{e \rightarrow e'}{E[e]\rightarrow E[e']}$$
+    \item \textbf{Contextual Equivalence}: two phrases of programming language are 
+contexually equivalent (=ctx) if any occurences of the first phrase in a 
+complete program can be replaced by the second phrase without affecting the 
+observable results of excuting the program.
+    \item \textbf{Operational Semantics}: a category of formal programming language 
+semantics in which certain desired properties of a program, such as correctness, safety 
+or security, are verified by constructing proofs from logical statements about its execution 
+and procedures, rather than by attaching mathematical meanings to its terms. (denotational 
+semantics does it by attaching mathematical meanings to its terms)
+    \item \textbf{$\beta$-reduction} revisit: 
+        $$ \frac{ }{(\lambda v.M)N \rightarrow_{\beta} M[v:=N]} $$
+        $$ \frac {M \rightarrow_{\beta} M'}{MN \rightarrow_{\beta}M'N}$$
+        $$ \frac {N \rightarrow_{\beta} N'}{MN \rightarrow_{\beta}MN'}$$
+        $$ \frac {M \rightarrow_{\beta} M'}{(\lambda v.M) \rightarrow_{\beta}(\lambda v.M')}$$ ($\xi$-rule)
+    \item \textbf{Weak $\lambda$-calculus}:
+        \begin{itemize}
+            \item $\lambda$-terms: same as (strong) $\lambda$-calculus
+            \item $\beta$-reduction: substitution only 
+            \item Does not have $\xi$-rule 
+            $$ \frac {M \rightarrow_{\beta} M'}{(\lambda v.M) \rightarrow_{\beta}(\lambda v.M')}$$
+            \item reduction does not go under abstraction 
+            \item not confluent 
+        \end{itemize}
+    \item \textbf{Weak Strategy}
+    \item \textbf{Weak Reduction}
+    \item \textbf{Normalisation Property}: 
+    a rewrite system has the (strong) normalization property or is terminating if every term is strongly normalizing; 
+    that is, if every sequence of rewrites eventually terminates with an irreducible term, also called a normal form. 
+    A rewrite system may also have the weak normalization property, meaning that for every term, there exists at least 
+    one particular sequence of rewrites that eventually yields a normal form, i.e., an irreducible term.
+    \item \textbf{Sharing}: multiple use of a same expression, which then needs to 
+    be evaluated only once, improving efficiency.
+    \item \textbf{Standardisation Theorem}: It states that if a term M $\beta$-reduces to 
+    a term N, then there exists a standard $\beta$-reduction sequence from M to N.
+
+    The standardisation theorem states that given a derivation $d:t\rightarrow_{\beta}^* s$
+    it is always possible to rearranging it into a standard derivation $e:t\rightarrow_{\beta}^* s$
+    that computes the same result but selecting redexes from left to right, this is the 
+    completeness property of standard derivation.
+    \item \textbf{Explicit Substitution} (ES): An intermediate formalism that - by 
+    de-composing the higher-order substitution operation into more atomic steps - 
+    allows a better understanding of the execution of complex languages.
+    \item \textbf{Cut-Elimination} revisit:
+        \begin{itemize}
+            \item cut: Having $\Gamma \models A, \Delta$ and $\Pi, A \models \Lambda$,
+            can conclude $\Gamma, \Pi \models \Delta, \Lambda$.
+            \item cut-elimination: $\Gamma \models A$ and $\Pi, A \models B$,
+            can conclude $\Gamma, \Pi \models  B$.
+        \end{itemize}
+    \item \textbf{Meta-terms}:terms with metavariables used to represent incomplete programs and proofs.
+    Metaterms are terms containing metavariables denoting incomplete programs/proofs in a higher-order unification framework 
+    \item \textbf{Decent}:
+     a term t is said to be decent in the calcu- lus λZ if every subterm v appearing in some substituted subterm u[x/v] of t is λZ- strongly normalising. As an example, the term x[x/(y y)][y/λw.w w] is decent in λes since y y and λw.w w are both λes-strongly normalising, but its Comp2-reduct x[x/(y y)[y/λw.w w]] is not. 
+
+\end{enumerate}
+
+
+\end{document}
