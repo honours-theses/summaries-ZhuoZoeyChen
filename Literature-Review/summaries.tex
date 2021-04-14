@@ -15,47 +15,73 @@ This document is written in order to assist Zhuo's PhD project.
 \newpage 
 
 \section{(In)Efficiency and reasonable cost models}
+\paragraph{Keywords:} Lambda calculus, cost models, sharing, computational complexity, functional programming.
 \paragraph{Author:} Beniamino Accattoli
-\paragraph{Summary:} This paper~\cite{DBLP:journals/entcs/Accattoli18} is about time cost models for the $\lambda$-calculus. It discusses the relationship of the evaluation 
-strategies being reasonable and being efficient as well as them being standard and being reasonable.
+\paragraph{Summary:} This paper~\cite{DBLP:journals/entcs/Accattoli18} distinguishes between commonly confused properties of evaluation strategies.
+                    Moreover, it clarifies what it means for an evaluation strategy to be \emph{reasonable}, \emph{efficient} and \emph{standard}.
+% It discusses the relationship of the evaluation 
+% strategies being reasonable and being efficient as well as them being standard and being reasonable.
 
-This paper first discusses the relationship between being reasonable and efficient and emphasises that they are two 
-different properties. It then talks about cost models for Turing machines and $\lambda$-calculus and their properties. 
+It then talks about cost models for Turing machines and $\lambda$-calculus and their properties. 
 It points out that the key features for reasonable strategies are termination and sub-term property, 
 
-This paper then go into dept about how to encode a reasonable model (e.g. Turing machine) in $\lambda$-calculus and 
-how to encode $\lambda$-calculus in a reasonable model (e.g. Turing machine/RAM). The latter is the more complicated one 
-as it needs to spend a lot of time dealing with size explosion.
+This paper represents back-and-forth simulations between $\lambda$-calculus and Turing machines.
+Simulating $\lambda$-calculus using Turing machines is more complicated due to the size explosion resulting from $\beta$-reduction.
 
-Next, this paper talks about useful sharing, including its definition, importance, where it can be used and difficulty of using it. 
+Next, useful sharing is introduced, including its definition, importance, where it can be used and difficulty of using it. 
 
-Following that, this paper discusses optimisation strategies to improve the efficiency of 
+Following that is the discussion about the optimisation strategies to improve the efficiency of 
 reasonable cost models, strategies including optimal sequential evaluation, optimal parallel evaluation, sharing of sub-terms and sharing 
 of computations and reasonable sharing of computations. 
 
-In the end, the paper talks about the relationship between standard and reasonable through its explanation about 
+In the end, the relationship between being standard and reasonable is discussed through explanation about 
 why leftmost-outermost strategy is reasonable.
 
-\paragraph{Keywords:} Lambda calculus, cost models, sharing, computational complexity, functional programming.
+
 
 \section{The theory of calculi with explicit substitutions revisited}
+\paragraph{Keywords:} Lambda calculus, explicit substitutions, survey, $\lambda$es-calculus.
 \paragraph{Author:} Delia Kesner
 \paragraph{Summary:} This paper~\cite{DBLP:conf/csl/Kesner07} first talks about the survey they have done about work in the domain of calculi with explicit substitution, 
 then establish a general theory of explicit substitutions for lambda-calculus that enjoys fundamental properties including confluence on 
 metaterms (and thus on terms), simulation of one-step $\beta$-reduction, strong normalisation of typed terms, preservation of $\beta$-strong normalisation, 
 simulation of one-step $\beta$-reduction and full composition. 
 
-In the survey part, it talks about the issues that calculi with explicit substitution are suffering from 
-, mentions Mellies' counter-example, proposes three possible solutions and their respective issues. It then
-addresses calculi with explicit substitution, the properties that they satisfy and the ones that they don't.
+For the survey part, things covered include the issues that calculi with explicit substitution are suffering from 
+, mentioning Mellies' counter-example, proposing three possible solutions and their respective issues. 
+Calculi with explicit substitution is then introduced, including the properties that they satisfy and the ones that they do not.
 
-The paper then introduces $\lambda$es-calculus, which leads to the second part of the paper. 
-The paper first introduces $\lambda$es-calculus's syntax, including its definition, equation C and reductions rules.
-It then shows how to prove that $\lambda$es-calculus is confluent on meta-terms and 
-how to prove that it preserves $\beta$-strong normalisation. The latter is proved by introducing another two 
-helper calculus $\lambda$esw-calculus and $\Gamma_I$-calculus. In the end it introduces The typed $\lambda$es-calculus.
+Following that, $\lambda$es-calculus is introduced, which leads to the other important part of the paper. 
+First thing covered is $\lambda$es-calculus's syntax, including its definition, equation C and reductions rules.
+Then the proof of $\lambda$es-calculus being confluent on meta-terms and the proof of how it preserves $\beta$-strong normalisation
+are covered. The latter is proved by introducing another two 
+helper calculus $\lambda$esw-calculus and $\Gamma_I$-calculus. In the end it introduces the typed $\lambda$es-calculus.
 
-\paragraph{Keywords:} Lambda calculus, explicit substitutions, survey, $\lambda$es-calculus.
+
+\section{The Weak Call-by-value Lambda-calculus is reasonable for both time and space}
+\paragraph{Keywords:} Theory of computation, Computational compexity and cryptography; Mathematics of computing, Lambda calculus; Invariance thesis;
+Weak call-by-value reduction; Time and space complexity; Abstract machines.
+\paragraph{Author:} Yannick Forster, Babian Kunze, Marc Roth 
+\paragraph{Summary:} 
+This paper~\cite{DBLP:journals/pacmpl/ForsterKR20} proves that the weak call-by-value $\lambda$-calculus (\textbf{L}) is a reasonable machine with respect to the natural 
+time and space measures and enables the formal verification of complexity-theoretic proofs concerninng complexity classes, both on paper and in proof assistants. 
+
+In order to prove the reasonability of weak call-by-value $\lambda$-calculus, the both ways simulation relation between \textbf{L} and Turing machines 
+need to be verified first. The complicated direction, which is simulating \textbf{L} using Turing machines, is defined and verified by interleaving two simulation 
+strategies. These two simulation strategies are called substitution-based strategy and heap-based strategy respectively. The former simulates a 
+reduction sequence naively as given by the reduction rules of \textbf{L}. The latter uses closures and keep track of the values assigned to variables in an environment instead of 
+executing any substitution if a $\beta$-reduction is simulated and thus allows for structure sharing. In more detail, two abstract machines implementing these strategies 
+are introduced in order to analyse these strategies on a more semantic level. 
+
+Future work of this paper includes:
+\begin{enumerate}
+    \item Extend to sublinear time or space classes;
+    \item Cover more versions of the $\lambda$-calculus;
+    \item Mechanise basic complexity theory;
+    \item Investigate whether the result ($P \subseteq PSPACE$) can be proved without reference to Turing machines, for instance by implementing 
+    the space-aware interleaving simulation in a universal $\lambda$-term;
+    \item Investigate whether these exists a higher-order interpretation of space complexity that does not exhibit (exponential) size explosion. 
+\end{enumerate}
 
 \bibliographystyle{plain}
 \bibliography{refs}
