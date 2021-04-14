@@ -70,8 +70,10 @@ semantics does it by attaching mathematical meanings to its terms)
     \item \textbf{Meta-terms}:terms with metavariables used to represent incomplete programs and proofs.
     Metaterms are terms containing metavariables denoting incomplete programs/proofs in a higher-order unification framework 
     \item \textbf{Decent}:
-     a term t is said to be decent in the calcu- lus λZ if every subterm v appearing in some substituted subterm u[x/v] of t is λZ- strongly normalising. As an example, the term x[x/(y y)][y/λw.w w] is decent in λes since y y and λw.w w are both λes-strongly normalising, but its Comp2-reduct x[x/(y y)[y/λw.w w]] is not. 
-
+     a term t is said to be decent in the calculus $\lambda Z$ if every subterm $v$ appearing in some substituted subterm $u[x/v]$ of $t$ is $\lambda Z$ strongly normalising. 
+     As an example, the term $x[x/(y y)][y/\lambda w.w w]$ is decent in λes since y y and λw.w w are both λes-strongly normalising, but its Comp2-reduct $x[x/(y y)[y/\lambda w.w w]]$ is not. 
+    \item \textbf{Call-by-push-value} (CBPV): is an idealised calculus for functional and imperative programming, introduced as a subsuming paradigm for both call-by-value (CBV) and call-by-name
+    (CBN). CBV and CBN can be simulated in CBPV and the translations preserve operational and denotational semantics
 \end{enumerate}
 
 
