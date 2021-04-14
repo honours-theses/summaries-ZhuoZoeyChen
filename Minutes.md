@@ -83,3 +83,31 @@ TODO:
 # Week 5:
 ## 14/04/2021
 
+Pre-meeting: 
+1. Isabelle or HOL4 or Coq? - unknown 
+2. Meeting with Carroll? - wait for a few more weeks 
+3. Scholarship is not taxable 
+4. Progress: Yannick's papers + talk; GSOE talks 
+
+Minutes:
+1. Talked about saarland university 
+2. Went through (quickly) The Weak Call-by-Value -Calculus Is Reasonable for Both Time and Space 
+3. Went through the formalisation of 2 quickly 
+4. Talked about Yannick's Church's thesis talk 
+5. Looked at (abstract+conclusion of) Verified Programming of Turing Machines in Coq 
+
+TODO:
+1. Go through the book about writing;
+2. Read Verified Programming of Turing Machines in Coq 
+3. The Weak Call-by-Value -Calculus Is Reasonable for Both Time and Space 
+	A. what is the definition of size (time and space) in TM and LC
+	B. what do they prove at the end
+	C. check if he proves everything in paper in Coq (what's the gap btw paper and formalisation)
+4. Check Yannick's recent papers to see what's open and what's been done 
+5. Check his git repo and download the coq version he is using 
+6. Check out types, linear types, types and complexity (just browse) 
+
+Next week:
+1. maybe contact yannick next week 
+2. New topics: types, linear types, types and complexity 
+3. Work through some Coq formalisation together 
