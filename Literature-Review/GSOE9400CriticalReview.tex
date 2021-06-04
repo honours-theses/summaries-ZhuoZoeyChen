@@ -1,0 +1,83 @@
+\documentclass[12pt]{article}
+\renewcommand{\baselinestretch}{1.5}
+\usepackage[margin=0.5in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib}
+\usepackage{bibentry}
+\nobibliography*
+
+\begin{document}
+
+Zhuo Chen z5155600
+
+\bibentry{DBLP:journals/pacmpl/ForsterKR20}
+\\
+\textbf{Introduction} 
+
+Forster et al.~\cite{DBLP:journals/pacmpl/ForsterKR20} claims that in computational complexity theory, Turing machines are usually used to define the complexity classes including P, NP, etc. 
+However, in terms of formalisation of computability theory and the verification of program correctness, Turing machines are not the best tools to use 
+as they are too low-level. They then shows that to contrast to that, other more abstract models such as $\lambda$-calculus are a lot easier to use for similar kind of issues.
+In particular, one variety of $\lambda$-calculus, the weak call-by-value $\lambda$-calculus (\textbf{L}) is a good computation model to work with.  
+We know that Turing machines are reasonable, and we also know from the statement by Slot and van Emde Boas~\cite{DBLP:conf/stoc/SlotB84} that 
+reasonable machines can simulate each other within a polynomially bounded overhead in time and a constant factor overhead in space.
+As a result, if one can show that \textbf{L} is in fact a reasonable machine, 
+then \textbf{L} can be used instead of the Turing machines for reasoning about complexity theory. 
+The authors~\cite{DBLP:journals/pacmpl/ForsterKR20} prove in this paper that \textbf{L} is a reasonable machine with respect to the natural 
+time and space measures and enables the formal verification of complexity-theoretic proofs concerning complexity classes, both on paper and in proof assistants. 
+This paper tackles the emerging topic within computational complexity theory and provides a useful model which can be further applied 
+to solve complex problems in the field of program complexity. 
+\\
+\textbf{Summary}
+
+The authors suggest that in order to prove the reasonability of \textbf{L}, the both ways simulation relation between \textbf{L} and Turing machines 
+needed to be verified first. The complicated direction, which is simulating \textbf{L} using Turing machines, is defined and verified by interleaving two simulation 
+strategies. These two simulation strategies are called substitution-based strategy and heap-based strategy respectively. The former simulates a 
+reduction sequence naively as given by the reduction rules of \textbf{L}. The latter uses closures and keep track of the values assigned to variables in an environment instead of 
+executing any substitution if a $\beta$-reduction is simulated and thus allows for structure sharing. In more detail, two abstract machines implementing these strategies 
+are introduced in order to analyse these strategies on a more semantic level. 
+
+In the end, the authors are successful at proving this simulation relation, providing both pen-and-paper proofs and 
+for the abstract machines, mechanisation in the proof assistant Coq~\cite{coqwebsite} as well. As a result, they are able to show that 
+\textbf{L} is a reasonable machine and can be used to reason about complexity theory. 
+\\
+\textbf{Critique}
+
+The authors have done a good job at achieving their goal, which is to show that \textbf{L} is a reasonable computation model 
+and can be used to verify the complexity classes of different programs. 
+Their work contributes to the program complexity and computability theory by providing the first proof that reasons about reasonability of a
+functional language based on natural measures. In addition to that, they formalised the abstract machines that they used in the simulation 
+in a well-known prover (Coq), which contributes even further in the field of formalisation as this will allow a big portion of theorem proving 
+scientists to get involved in this project. In comparison to this, some other proofs about complexity, Turing machines specifically, has been done in 
+a less-known prover by~\cite{DBLP:conf/wollic/AspertiR12}, which makes it hard for people to reuse their work as not many people are familiar with that prover 
+or its library. 
+
+Their work is significant, however, that doesn't mean that they have finished all the work lying in this direction of research. 
+Their paper focuses on only one kind of $\lambda$-calculus (the weak call-by-value $\lambda$-calculus, \textbf{L} more specifically). 
+In reality, although different lambda calculuses should theoretically all be equivalent to each other, they in fact do rely on 
+different evaluation strategies which could lead to very different time and space complexity. One interesting $\lambda$-calculus to 
+look into could be call-by-push-value $\lambda$-calculus~\cite{DBLP:conf/tlca/Levy99} as it deals with the two most mainstream 
+$\lambda$-calculuses and therefore it will be valuable if we can prove this to be reasonable. 
+
+This paper is related to my work because it either opened gates, or can act as a bridge for lots of 
+related topics in complexity and computability theories, which are in the area of my interest. In particular, the successful simulation 
+between \textbf{L} and the Turing machines makes it very close for theoretical computer scientists to be able to use 
+$\lambda$-calculus to reason about complexity. The only thing, but also an essential one, that is missing, is the formalisation of the basic 
+complexity theory that can link the whole high-level proof the authors mechanised to the 
+complexity classes. It could be difficult to do, as described by Norrish~\cite{DBLP:conf/itp/Norrish11}, 
+"If register machines are unappealing because of their general fiddliness, Turing machines are an even more daunting prospect."
+However, this also means that this will be a meaningful contribution if it is done.
+\\
+\textbf{Conclusion}
+
+Forster et al. are the first to complete a proof, both on paper and in proof assistants, which reasons about reasonability of a functional language ($\lambda$-calculus in particular).
+They successfully prove the both ways simulation relation between the weak $\lambda$-calculus and Turing machines, which 
+contributes to the further development in the filed of complexity and computability theory. 
+What their work is lacking includes formalisation of basic complexity theory, proofs for sublinear time or space classes and possible extensions to 
+different $\lambda$-calculuses. This suggests that I can formalise the basic complexity theory in order to provide a complete and useable proof 
+for the reasonability of the weak call-by-value $\lambda$-calculus. I can also look into the other two things and try to extend the current proof.
+
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
