@@ -1,6 +1,9 @@
 \documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{natbib}
+\usepackage{bibentry}
+\usepackage{sectsty}
+\nobibliography*
 
 \title{Literature Review Summaries}
 \author{Zhuo Chen}
@@ -61,7 +64,7 @@ helper calculus $\lambda$esw-calculus and $\Gamma_I$-calculus. In the end it int
 \section{The Weak Call-by-value Lambda-calculus is reasonable for both time and space}
 \paragraph{Keywords:} Theory of computation, Computational compexity and cryptography; Mathematics of computing, Lambda calculus; Invariance thesis;
 Weak call-by-value reduction; Time and space complexity; Abstract machines.
-\paragraph{Author:} Yannick Forster, Babian Kunze, Marc Roth 
+\paragraph{Author:} Yannick Forster, Fabian Kunze, Marc Roth 
 \paragraph{Summary:} 
 This paper~\cite{DBLP:journals/pacmpl/ForsterKR20} proves that the weak call-by-value $\lambda$-calculus (\textbf{L}) is a reasonable machine with respect to the natural 
 time and space measures and enables the formal verification of complexity-theoretic proofs concerninng complexity classes, both on paper and in proof assistants. 
@@ -83,6 +86,15 @@ Future work of this paper includes:
     \item Investigate whether these exists a higher-order interpretation of space complexity that does not exhibit (exponential) size explosion. 
 \end{enumerate}
 
+\section{Verified Programming of Turing Machines in Coq}
+\paragraph{Keywords:} Theory of computation $\rightarrow$ Turing machinnes; Type theory; Verification; Universal machine; Coq 
+\paragraph{Author:} Yannick Forster, Fabian Kunze, Maximilian Wuttke 
+\paragraph{Summary:} 
+This paper~\cite{DBLP:conf/cpp/0002KW20} presents a framework for the verified programming of multi-tape Turing machines in Coq.
+The implementation includes four layers of abstractions, named as L0 - L3 from low to high. The highest abstraction L3 allows a user to 
+implement nontrivial algorithms as Turing machines and verify their correctness, as well as time and space complexity compositionally. 
+The project also includes case studies, where they verify a translation from multi-tape to single-tape machines as well as a universal Turing machine, both 
+with polynomial time overhead and constant factor space overhead.
 \bibliographystyle{plain}
 \bibliography{refs}
 
