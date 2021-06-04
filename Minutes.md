@@ -111,3 +111,95 @@ Next week:
 1. maybe contact yannick next week 
 2. New topics: types, linear types, types and complexity 
 3. Work through some Coq formalisation together 
+
+# Week 6:
+## 21/04/2021
+
+Pre-meeting: 
+1. Went through the elements of style
+2. wrote summary for Verified Programming of Turing Machines in Coq 
+3.  The Weak Call-by-Value -Calculus Is Reasonable for Both Time and Space 
+	A. /
+	B. Mechanised results of the abstract machines (substitution machine and heap machine)
+	C. Not the simulation of L 
+4. Looked linear logic and linear types; confused about linear logic 
+5. Got the git repo but a bit confused about the additional package 
+
+TODO:
+1. Check out the newer versions of the elements of style 
+2. https://github.com/uds-psl/time-invariance-thesis-for-L 
+	A. get OPAM, Coq and the packages 
+	B. work through the proof slowly 
+	C. maybe formalise something in HOL4 based on their coq proof 
+3. Look at formalisations 
+	A. try to get a high-level overview of what is proven and what remains open
+	B. what helpful libraries are there in each ITP (HOL4, Isabelle/HOL, Coq)
+		a. write diagrams/tables/... of what is in which ITP 
+		b. what is proven
+		c. what remains open
+		d. is anything reusable to solve open problems 
+	C. What will be a good problem to start to formalise?
+4. [extra] Things might be relevant to complexity/compilation/... problems: (label them as easy to hard; easy - 0.5yrs, hard - 2yrs)
+	A. Substitution machine
+	B. Intersection types; David Sands. 
+	C. Linear logic (just to get high-level understanding). 
+	D. Denotational semantics (?)
+	E. Call by push value (Paul Levy)
+
+# Week 7:
+## 03/05/2021 
+
+More HW:
+1. Look at the lecture slides up to (including) week5, maybe videos 
+2. http://www.cse.unsw.edu.au/~cs3161/20T3/Week%2005/1Mon/Code.html 
+3. check out the haskell code 
+4. formalise the syntax of the language, M machine and C machine in HOL4
+
+# Week 9
+## 18/05/2021 
+
+TODO:
+1. apply for the laptop 
+2. M C machine formalisation 
+
+Engaging with Research End-Users survey 
+
+# Week 10
+## 25/05/2021 
+
+TODO:
+1. Software foundation (don’t spend too much time)
+2. Watch lectures/do some exercises 
+3. (IMPORTANT) M C machine formalisation, compiler, decompiler 
+4. Types and programming language 
+
+Left from previous weeks:
+1. Check out the newer versions of the elements of style 
+2. https://github.com/uds-psl/time-invariance-thesis-for-L 
+	A. get OPAM, Coq and the packages 
+	B. work through the proof slowly 
+	C. maybe formalise something in HOL4 based on their coq proof 
+3. Look at formalisations 
+	A. try to get a high-level overview of what is proven and what remains open
+	B. what helpful libraries are there in each ITP (HOL4, Isabelle/HOL, Coq)
+		a. write diagrams/tables/... of what is in which ITP 
+		b. what is proven
+		c. what remains open
+		d. is anything reusable to solve open problems 
+	C. What will be a good problem to start to formalise?
+4. [extra] Things might be relevant to complexity/compilation/... problems: (label them as easy to hard; easy - 0.5yrs, hard - 2yrs)
+	A. Substitution machine
+	B. Intersection types; David Sands. 
+	C. Linear logic (just to get high-level understanding). 
+	D. Denotational semantics (?)
+	E. Call by push value (Paul Levy)
+
+# Week 11
+## 01/06/2021
+
+Meeting postponed to next week. 
+
+TODOs:
+1. finish the reading group paper (abstracting abstract machines) 
+2. read next week's reading group's paper 
+3. Practical Foundations for Programming Languages
