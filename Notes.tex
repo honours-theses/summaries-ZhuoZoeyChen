@@ -72,13 +72,65 @@ semantics does it by attaching mathematical meanings to its terms)
     \item \textbf{Decent}:
      a term t is said to be decent in the calculus $\lambda Z$ if every subterm $v$ appearing in some substituted subterm $u[x/v]$ of $t$ is $\lambda Z$ strongly normalising. 
      As an example, the term $x[x/(y y)][y/\lambda w.w w]$ is decent in $\lambda es$ since $y$ $y$ and $\lambda w.w w $are both $\lambda es$-strongly normalising, but its Comp2-reduct $x[x/(y y)[y/\lambda w.w w]]$ is not. 
-    \item \textbf{Abstraction}: 
+    \item \textbf{Abstraction}: ($\lambda$x. m); function definition (M is a lambda term). The variable x becomes bound in the expression.
     \item \textbf{Eager functional language}: In computer programming, eager evaluation, also known as strict evaluation or greedy evaluation, is the evaluation strategy used by most traditional programming languages. 
     In eager evaluation, an expression is evaluated as soon as it is bound to a variable. 
     An opposite alternative to eager evaluation is lazy evaluation, where expressions are evaluated only when a dependent expression is evaluated depending upon a defined evaluation strategy.
+       \item \textbf{Linear types}: corresponds to linear logic and ensures that objects are used exactly once, allowing the system to safely deallocate an object after its use.
+    \item \textbf{(Strong) invariance Thesis}: all reasonable models of computation also agree, to some extent, in their notions of complexity: ‘Reasonable’
+    machines can simulate each other within a polynomially bounded overhead
+    in time and a constant-factor overhead in space.”
+    \item \textbf{Sublinear time complexity}: An algorithm is said to run in sub-linear time (often spelled sublinear time) if T(n) = o(n). Note that 
+    it is little-o here. 
+    \item \textbf{Universal $\lambda$-term}: ? 
+    \item \textbf{Natural Measures for time and space}: ?
     \item \textbf{Call-by-push-value} (CBPV): is an idealised calculus for functional and imperative programming, introduced as a subsuming paradigm for both call-by-value (CBV) and call-by-name
     (CBN). CBV and CBN can be simulated in CBPV and the translations preserve operational and denotational semantics
-    \item \textbf{Linear types}: corresponds to linear logic and ensures that objects are used exactly once, allowing the system to safely deallocate an object after its use.
+    In programming language theory, the call-by-push-value (CBPV) paradigm,[1] inspired by monads, allows writing semantics for lambda-calculus without writing two variants to deal with the difference between call-by-name and call-by-value. To do so, CBPV introduces a term language that distinguishes computations and values, according to the slogan a value is, a computation does; this term language has a single evaluation order. However, to evaluate a lambda-calculus term according to either the call-by-name (CBN) or call-by-value (CBV) reduction strategy, one can translate the term to CBPV using a call-by-name or call-by-value translation strategy, which give rise to different terms. Evaluating the result of the call-by-value translation corresponds to evaluating the original term with the call-by-value strategy; evaluating the result of the call-by-name translation corresponds instead to evaluating the original term with the call-by-name strategy.
+    \item \textbf{Constructive Type Theory}:Constructive type theory, (also known as intuitionistic type theory, or Martin-Löf type theory) is a type theory and an alternative foundation of mathematics.
+    Intuitionistic type theory has 3 finite types, which are then composed using 5 different type constructors. Unlike set theories, type theories are not built on top of a logic like Frege's. So, each feature of the type theory does double duty as a feature of both math and logic.
+    If you are unfamiliar with type theory and know set theory, a quick summary is: Types contain terms just like sets contain elements. Terms belong to one and only one type. Terms like 2+2 and 2·2 compute ("reduce") down to canonical terms like 4. More details: https://plato.stanford.edu/entries/type-theory-intuitionistic/
+    \item \textbf{Multi-tape Turing machine}: A multi-tape Turing machine is a variant of the Turing machine that utilizes several tapes. Each tape has its own head for reading and writing. Initially, the input appears on tape 1, and the others start out blank.
+    This model intuitively seems much more powerful than the single-tape model, but any multi-tape machine—no matter how many tapes—can be simulated by a single-tape machine using only quadratically more computation time.
+    A k-tape Turing machine can be described as a 6-tuple $M = \langle Q, \Gamma, s, b, F, \delta \rangle$ where:
+        \begin{itemize}
+            \item $Q$ is a finite set of states
+            \item $\Gamma$ is a finite set of the tape alphabet 
+            \item $s\in Q$ is the initial state 
+            \item $b\in \Gamma$ is the blank symbol 
+            \item $F\subseteq Q$ is the set of final or accepting states 
+            \item $\delta : Q \times \Gamma^k \rightarrow Q \times (\Gamma \times \{L, R, S\})^k$ is a partial 
+            function called the transition function, where k is the number of tapes, L is left shift, R is right shift and 
+            S is no shift. 
+        \end{itemize}
+    \item \textbf{Lift}: In category theory, a branch of mathematics, given a morphism f: X → Y and a morphism g: Z → Y, a lift or lifting of f to Z is a morphism h: X → Z such that f = g∘h. We say that f factors through h.
+    \item \textbf{Brouwer–Heyting–Kolmogorov interpretation (realizability interpretation)}:
+    The interpretation states what is intended to be a proof of a given formula. This is specified by induction on the structure of that formula:
+    \begin{itemize}
+        \item   A proof of $P \wedge Q$ is a pair $\langle a, b \rangle$ where $a$ is a proof of $P$ and $b$ is a proof of $Q$.
+        \item 	A proof of $P \vee Q$ is a pair $\langle a, b \rangle$ where $a$ is 0 and $b$ is a proof of $P$, or $a$ is 1 and $b$ is a proof of $Q$.
+        \item	A proof of $P \rightarrow Q$ is a function $f$ that converts a proof of $P$ into a proof of $Q$.
+        \item	A proof of $\exists x \in S: \varphi (x)$￼is a pair $\langle a, b \rangle$ where $a$ is an element of $S$, and $b$ is a proof of $\varphi(a)$.
+        \item	A proof of $\forall x \in S: \varphi (x)$ is a function $f$ that converts an element $a$ of $S$ into a proof of $\varphi(a)$.
+        \item	The formula $\neg P$ is defined as $P \rightarrow \bot$, so a proof of it is a function $f$ that converts a proof of $P$ into a proof of $\bot$￼.
+        \item	There is no proof of $\bot$ (the absurdity, or bottom type (nontermination in some programming languages)).
+    \end{itemize}
+
+The interpretation of a primitive proposition is supposed to be known from context. In the context of arithmetic, a proof of the formula $s = t$ is a computation reducing the two terms to the same numeral.
+Kolmogorov followed the same lines but phrased his interpretation in terms of problems and solutions. To assert a formula is to claim to know a solution to the problem represented by that formula. 
+For instance $P \rightarrow Q$ is the problem of reducing $Q$ to $P$;
+to solve it requires a method to solve problem $Q$ given a solution to problem $P$.
+    \item \textbf{Lint/Linter}: is a static code analysis tool used to flag programming errors, bugs, stylistic errors and suspicious constructs. The term originates from a Unix utility that examined C language source code.
+    \item \textbf{Linear Types}: corresponds to linear logic and ensures that objects are used exactly once, allowing the system to safely deallocate an object after its use.
+    \item \textbf{Linear Logic}: TODO
+    \item \textbf{Hoare Logic}: TODO
+    \item \textbf{Separation Logic}: TODO
+    \item \textbf{Semantics}: TODO
+    \item \textbf{Cost Models}: a mathematical model that tries to measure of the cost of executing a program. 
+	- Denotational cost models 
+		assigns a cost directly to syntax 
+	- Operational cost 
+		first define a program-evaluating abstract machine. Then determine the time cost by counting the number of steps taken by the abstract machine. 
 \end{enumerate}
 
 
