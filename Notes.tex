@@ -127,10 +127,16 @@ to solve it requires a method to solve problem $Q$ given a solution to problem
     \item \textbf{Separation Logic}: TODO
     \item \textbf{Semantics}: TODO
     \item \textbf{Cost Models}: a mathematical model that tries to measure of the cost of executing a program. 
-	- Denotational cost models 
-		assigns a cost directly to syntax 
-	- Operational cost 
-		first define a program-evaluating abstract machine. Then determine the time cost by counting the number of steps taken by the abstract machine. 
+        \begin{itemize}
+            \item Denotational cost models 
+                    assigns a cost directly to syntax 
+            \item Operational cost models 
+                    first define a program-evaluating abstract machine. Then determine the time cost by counting the number of steps taken by the abstract machine. 
+        \end{itemize}
+    \item \textbf{Strong progress}: 
+        If $t$ is a term, then either $t$ is a value or else there exists a term $t'$ such that $t \rightarrow t'$.
+    \item \textbf{Normal form}:
+        Terms that cannot make progress. 
 \end{enumerate}
 
 
