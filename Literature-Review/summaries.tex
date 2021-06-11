@@ -95,6 +95,35 @@ The implementation includes four layers of abstractions, named as L0 - L3 from l
 implement nontrivial algorithms as Turing machines and verify their correctness, as well as time and space complexity compositionally. 
 The project also includes case studies, where they verify a translation from multi-tape to single-tape machines as well as a universal Turing machine, both 
 with polynomial time overhead and constant factor space overhead.
+
+\section{Residual Theory in $\lambda$-calculus: A formal Development~\cite{DBLP:journals/jfp/Huet94}}
+\paragraph{Keywords:} $\lambda$-calculus; Gallina; Residual theory; Prism Theorem; Coq
+\paragraph{Author:} Gerard Huet
+\paragraph{Summary:} 
+The author presents the complete development, in Gallina, of the residual theory of $\beta$-reduction in pure $\lambda$-calculus and 
+obtained the results including Prism Theorem (main result), and its corollary Levy's Cube Lemma. 
+Gallina is the specification language of the Coq Proof Assistant. 
+The author represents $\lambda$-terms with de Bruijin's indexes, then defined 
+abstract syntax, lifting, substitution, one-step $\beta$-reduction, $\beta$-reduction, 
+$\beta$-conversion and parallel $\beta$-reduction. The author 
+then proves the equivalence between reduction and parallel reduction. Confluence is then defined and 
+several lemmas about it are proved. Redexes, regularity .. Residuals.. Prism theorem, cube lemma... confluence ...
+\paragraph{Question:} 2.1
+
+\section{A Certified Type-Preserving Compiler from Lambda Calculus to Assembly Language~\cite{DBLP:conf/pldi/Chlipala07} (2007)}
+\paragraph{Keywords:}
+\paragraph{Author:} Adam Chlipala
+\paragraph{Summary:} The author presents a certified compiler from the simply-typed lambda calculus to assembly language. 
+
+
+\section{A Verified Compiler for an Impure Functional Language~\cite{DBLP:conf/popl/Chlipala10} (2010)}
+\paragraph{Keywords:}
+\paragraph{Author:} Adam Chlipala
+\paragraph{Summary:} The author presents a verified compiler, in Coq, to an idealized assembly language 
+from a small, untyped functional language with mutable references and exceptions 
+
+
+
 \bibliographystyle{plain}
 \bibliography{refs}
 
