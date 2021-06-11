@@ -140,46 +140,6 @@ Termination
 		rw[] >> Cases_on `e1` >> Cases_on `e2` >> rw[M_step])
 End
 
-(*
-Datatype:
-	M_machine = <|
-		Q: state set;
-		I: state set;
-		F: state set;
-		tr: state -> state
-	|>
-End
-*)
-
-(*
-Definition subst:
-	subst e [] _ = e ∧
-	subst (Num n) (x1, y1)::t rec_subed = if (n == x1) then (subst (Num y1) t) else (subst (Num n) t) ∧
-	subst (Lit n) (x1, y1)::t rec_subed = if (n == x1) then (subst (Lit y1) t) else (subst (Lit n) t) ∧
-	subst (Plus e1 e2) lst rec_subed = Plus (subst e1 lst) (subst e2 lst) rec_subed ∧
-	subst (If e1 e2 e3) lst rec_subed = If (subst e1 lst) (subst e2 lst) (subst e3 lst) rec_subed ∧
-	subst (Apply e1 e2) lst rec_subed = Apply (subst e1 lst) (subst e2 lst) rec_subed ∧
-
-	subst (Recfun f x e) (x1, y1)::t rec_subed = if (not rec_subed) then subst (subst e [(x1, y1)] true) t false
-End
-*)
-
-(*
-Definition M_rules:
-	M_rules M (Num n) = IntV n ∧
-	M_rules M (Lit b) = BoolV b ∧
-	(M_rules M e1 e1' ⇒
-		(	M_rules M (Plus e1 e2) (Plus e1' e2) ∧
-			M_rules M (If e1 e2 e3) (If e1' e2 e3) ∧
-			M_rules M (Apply e1 e2) (Apply e1' e2) ∧
-			M_rules M (Apply (Recfun f x e) e1) (Apply (Recfun f x e) e1')
-		)) ∧
-	(M_rules M (If (Lit True) e2 e3) e2) ∧
-			M_rules M (If (Lit False) e2 e3) e3 ∧
-	(v ∈ M.F ⇒ M_rules M (Apply (Recfun f x e) v) (subst e [(x, v), (f, Recfun f x e)] false))
-End
-*)
-
 
 (*
   -----------------
