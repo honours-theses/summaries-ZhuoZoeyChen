@@ -230,72 +230,45 @@ Proof
 	>> `x' = y''` by metis_tac[] >> gvs[]
 QED
 
-(*
 Theorem normalizes_terminates:
-	∀R. functional R ⇒ (∀x. normalizes R x ⇒ terminatesOn R x)
+	functional R ⇒ (∀x. normalizes R x ⇒ terminatesOn R x)
 Proof
-	rw[functional, normalizes] >> Cases_on `x = y`
-	>- (qpat_x_assum (`evaluates R x y`) mp_tac >>
-		MAP_EVERY qid_spec_tac [`y`, `x`] >> ho_match_mp_tac evaluates_strongind >> rw[]
-		>- (gvs[reducible, terminatesOn_cases] >> metis_tac[] >>))
-	>> pop_assum mp_tac >>
-	MAP_EVERY qid_spec_tac [`y`, `x`] >> ho_match_mp_tac evaluates_strongind >> rw[]
-	>- (`evaluates R x x` by metis_tac[evaluates_cases] >> metis_tac[terminatesOn_cases])
-	>>
+	rw[normalizes] >> qpat_x_assum (`functional R`) mp_tac >>
+	pop_assum mp_tac >> MAP_EVERY qid_spec_tac [`y`, `x`] >>
+	Induct_on ‘evaluates’ >> rw[] (* 2 *)
+	>- (simp[Once terminatesOn_cases] >> metis_tac[reducible]) >>
+	first_x_assum drule >> rw[] >> simp[Once terminatesOn_cases] >>
+	metis_tac[functional]
 QED
-*)
+
+Theorem irred_evaluates_refl:
+	∀ x. (∀y. ¬ R x y) ⇒ evaluates R x x
+Proof
+	metis_tac[evaluates_rules,reducible]
+QED
 
 Theorem terminates_normalizes:
 	computable R ⇒ ∀x. terminatesOn R x ⇒ normalizes R x
 Proof
-	rw[computable, normalizes, Once evaluates_cases, stepFunction] >>
-	Cases_on `reducible R x`
-	>- (fs[Once terminatesOn_cases, reducible] >>
-		Cases_on `f x`)
-	>>
-	rw[computable, normalizes, Once evaluates_cases, stepFunction, Once terminatesOn_cases] >>
-	qexists_tac `x` >> rw[] >>
-	`case f x of NONE => ∀y. ¬R x y | SOME y => R x y` by metis_tac[] >>
-	Cases_on `f x` >> gvs[reducible] >>
-	first_x_assum drule >> rw[] >>
-	fs[Once terminatesOn_cases] >>
+	rw[] >> qpat_x_assum (`computable R`) mp_tac >>
+	pop_assum mp_tac >> qid_spec_tac `x` >>
+	Induct_on `terminatesOn` >> rw[normalizes] >>
+	‘computable R ⇒ ∀x'.R x x' ⇒ terminatesOn R x' ∧ ∃y. evaluates R x' y’
+    	by metis_tac[] >>
+	first_x_assum drule >> strip_tac >>
+	qpat_x_assum ‘computable _’ mp_tac >> rw[computable,stepFunction] >>
+	Cases_on ‘f x’ (* 2 *)
+	>- (first_x_assum $ qspec_then ‘x’ assume_tac >> rfs[] >>
+	    metis_tac[irred_evaluates_refl]) >>
+	first_x_assum $ qspec_then ‘x’ assume_tac >> rfs[] >>
+	first_x_assum drule >> strip_tac >> metis_tac[evaluates_rules]
 QED
 
 Theorem evaluates_irred:
-	evaluates R x y ⇒ ¬reducible R y
+	∀x y. evaluates R x y ⇒ ¬reducible R y
 Proof
+	Induct_on ‘evaluates’ >> rw[]
 QED
-
-(*
-
-Lemma normalizes_terminates (X : ARS) :
-  functional (≻X) ->
-  forall (x:X), normalizes x -> terminatesOn (≻) x.
-Proof.
-  intros FN x [x' ?]. induction H.
-  - econstructor. intros x' ?; destruct H. eauto.
-  - econstructor. intros x' ?. now rewrite (FN _ _ _ H1 H).
-Qed.
-
-Lemma terminates_normalizes (X : ARS) :
-  computable (≻X) ->
-  forall (x:X), terminatesOn (≻) x -> normalizes x.
-Proof.
-  intros C%computable_classical x. induction 1.
-  destruct (C x) as [ [a' Hstep] | ].
-  - destruct (H _ Hstep) as [a'']. exists a''. eauto using evaluates.
-  - exists x. now econstructor.
-Qed.
-
-Lemma evaluates_irred (X : ARS) (x y : X):
-  x ▷ y -> ~ reducible (≻) y.
-Proof.
-  induction 1; eauto.
-Qed.
-*)
-
-
-
 
 (* ------------------
 	      Misc
