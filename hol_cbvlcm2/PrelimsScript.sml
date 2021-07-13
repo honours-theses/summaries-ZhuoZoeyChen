@@ -1,0 +1,355 @@
+open HolKernel Parse boolLib bossLib;
+open arithmeticTheory;
+open listTheory;
+
+val _ = new_theory "Prelims";
+
+
+
+
+(* ------------------
+   Decidable Predicates
+   ------------------ *)
+(* Not needed in HOL4 *)
+
+(* below is the coq code *)
+
+(* Decidable predicates. Allows to write e.g. [if Dec (x=y) then _ else _ ] in functions
+and [decide (x=y)] in Proofs to do case distinctions after showing that some property is decidable, e,g, see nat_eq_dec *)
+
+(*
+Definition dec (X: Prop) : Type := {X} + {~ X}.
+
+Existing Class dec.
+
+Definition Dec (X: Prop) (d: dec X) : dec X := d.
+Arguments Dec X {d}.
+
+Tactic Notation "decide" constr(p) :=
+  destruct (Dec p).
+Tactic Notation "decide" "_" :=
+  destruct (Dec _).
+*)
+
+
+
+
+(* ------------------
+	 Natural numbers
+   ------------------ *)
+
+Theorem size_induction:
+	∀f p. (∀x. ((∀y. f y < f x ⇒ p y) ⇒ p x)) ⇒ (∀x. p x)
+Proof
+	ntac 4 strip_tac >>
+	`(∀y. f y < f x ⇒ p y)` suffices_by gs[] >>
+	`∀n y. f y < n ⇒ p y` suffices_by metis_tac[] >>
+	Induct_on `n` >> rw[]
+QED
+
+(*
+Instance nat_le_dec (x y : nat) : dec (x <= y) :=
+  le_dec x y.
+
+Notation "'eq_dec' X" := (forall x y : X, dec (x=y)) (at level 70).
+Instance nat_eq_dec :
+  eq_dec nat.
+Proof.
+  unfold dec. decide equality.
+Defined.
+*)
+
+
+
+
+(* ------------------
+	   	 Lists
+   ------------------ *)
+
+(* Notation "| A |" := (length A) (at level 65). *)
+
+(*Notation for lookup*)
+(* Notation "A .[ n ]" := (nth_error A n) (at level 1, format "A '.[' n ]").
+Notation "x '∈' A" := (In x A) (at level 70). *)
+
+
+Definition nth_error:
+	nth_error 0 (h::_) = SOME h ∧
+	nth_error (SUC n) (_::t) = nth_error n t ∧
+    nth_error _ _ = NONE
+End
+
+Theorem nth_error_lt_Some:
+	∀n H. n < LENGTH H ⇒ ∃x. nth_error n H = SOME x
+Proof
+	Induct_on `n` >> rw[nth_error, EL, ADD1]
+	>- (qexists_tac `EL 0 H` >> Induct_on `H` >> rw[nth_error])
+    >> Induct_on `H` >> rw[nth_error, EL, ADD1] >>
+    first_x_assum drule >> rw[] >> metis_tac[nth_error, EL, ADD1]
+QED
+
+Theorem nth_error_Some_lt:
+	∀n H x. nth_error n H = SOME x ⇒ n < LENGTH H
+Proof
+	Induct_on `n` >> Induct_on `H` >> rw[nth_error, EL, ADD1]
+QED
+
+Theorem nth_error_map:
+	∀n H a f. nth_error n (MAP f H) = SOME a ⇒ ∃b. nth_error n H = SOME b ∧ a = f b
+Proof
+	Induct_on `n` >> Induct_on `H` >> rw[nth_error]
+QED
+
+(* https://coq.inria.fr/library/Coq.Lists.List.html#Forall *)
+
+Inductive Forall:
+	Forall P [] ∧
+	∀x l. P x ∧ Forall P l ⇒ Forall P (x::l)
+End
+
+Theorem Forall_map:
+	∀p f x A. Forall (λx. p (f x)) A ⇒ Forall p (MAP f A)
+Proof
+	ntac 4 strip_tac >> Induct_on `Forall` >> rw[Forall_rules]
+QED
+
+(*
+Hint Extern 4 =>
+match goal with
+|[ H: ?x ∈ nil |- _ ] => destruct H
+end.
+*)
+
+(*Register additional simplification rules with autorewrite*)
+(* Hint Rewrite <- app_assoc : list. *)
+
+
+
+
+(* ------------------
+	   Relations
+   ------------------ *)
+
+
+(*
+Definition rcomp X Y Z (R : X -> Y -> Prop) (S : Y -> Z -> Prop) : X -> Z -> Prop :=
+  fun x z => exists y, R x y /\ S y z.
+*)
+
+Definition rcomp:
+	rcomp x z R S = ∃y. R x y ∧ S y z
+End
+
+(*
+Structure ARS :=
+  {
+    ARS_X :> Type ;
+    ARS_R : ARS_X -> ARS_X -> Prop
+  }.
+Notation "(≻)" := (@ARS_R _) (at level 0).
+Notation "(≻ X )" := (@ARS_R X) (at level 0).
+Notation "x  ≻  x'" := (ARS_R x x') (at level 40).
+*)
+
+Definition reducible:
+	reducible R x = ∃x'. R x x'
+End
+
+Definition functional:
+	functional R = ∀x y y'. R x y ⇒ R x y' ⇒ y = y'
+End
+
+Definition stepFunction:
+	stepFunction R f =
+		∀x. case (f x) of
+				SOME y => R x y
+			  | NONE   => ∀y. ¬(R x y)
+End
+
+Definition computable:
+	computable R = ∃f. stepFunction R f
+End
+
+Definition classical:
+	classical R = ∀s. reducible R s ∨ ¬(reducible R s)
+End
+
+Theorem computable_classical:
+	computable R ⇒ classical R
+Proof
+	rw[computable, classical, computable]
+QED
+
+(* https://coq.inria.fr/library/Coq.Lists.List.html#Forall2 *)
+
+Inductive Forall2:
+	(∀R. Forall2 R [] []) ∧
+	∀x y l l' R. R x y ∧ Forall2 R l l' ⇒ Forall2 R (x::l) (y::l')
+End
+
+Theorem Forall2_impl:
+	∀A B P1 P2. (∀x y. P1 x y ⇒ P2 x y) ⇒ Forall2 P1 A B ⇒ Forall2 P2 A B
+Proof
+	Induct_on `Forall2` >> rw[Forall2_rules]
+QED
+
+(*
+Inductive terminatesOn (X : Type) (R : X -> X -> Prop) x: Prop :=
+  terminatesC (wf: forall x', R x x' -> terminatesOn R x').
+*)
+Inductive terminatesOn:
+	∀(R: 'a -> 'a -> bool) (x: 'a).
+		(∀x'. R x x' ⇒ terminatesOn R x') ⇒ terminatesOn R x
+End
+
+(* R: stepping/reducing function *)
+Inductive evaluates:
+	(∀x. ¬reducible R x ⇒ evaluates R x x) ∧
+	∀x y z. R x y ∧ evaluates R y z ⇒ evaluates R x z
+End
+
+(*
+Notation "(▷)" := (@evaluates _) (at level 0).
+Notation "(▷ X )" := (@evaluates X) (at level 0).*)
+(* workaround to prefere "x ≻ y" over "(≻) x y"*) (*Notation "x ▷ x'" := 0. *)
+
+(*Notation "x ▷ x'" := (@evaluates _ x x').*)
+
+Definition normalizes:
+	normalizes R x = ∃y. evaluates R x y
+End
+
+Theorem evaluates_fun:
+	∀R. functional R ⇒ functional (evaluates R)
+Proof
+	rw[functional] >> pop_assum mp_tac >> qid_spec_tac `y'` >> pop_assum mp_tac >>
+	MAP_EVERY qid_spec_tac [`y`, `x`] >> ho_match_mp_tac evaluates_strongind >> rw[]
+	>- (gvs[Once evaluates_cases] >> gvs[reducible])
+	>> pop_assum (strip_assume_tac o PURE_ONCE_REWRITE_RULE[evaluates_cases])
+	>- gvs[reducible]
+	>> `x' = y''` by metis_tac[] >> gvs[]
+QED
+
+(*
+Theorem normalizes_terminates:
+	∀R. functional R ⇒ (∀x. normalizes R x ⇒ terminatesOn R x)
+Proof
+	rw[functional, normalizes] >> Cases_on `x = y`
+	>- (qpat_x_assum (`evaluates R x y`) mp_tac >>
+		MAP_EVERY qid_spec_tac [`y`, `x`] >> ho_match_mp_tac evaluates_strongind >> rw[]
+		>- (gvs[reducible, terminatesOn_cases] >> metis_tac[] >>))
+	>> pop_assum mp_tac >>
+	MAP_EVERY qid_spec_tac [`y`, `x`] >> ho_match_mp_tac evaluates_strongind >> rw[]
+	>- (`evaluates R x x` by metis_tac[evaluates_cases] >> metis_tac[terminatesOn_cases])
+	>>
+QED
+*)
+
+Theorem terminates_normalizes:
+	computable R ⇒ ∀x. terminatesOn R x ⇒ normalizes R x
+Proof
+	rw[computable, normalizes, Once evaluates_cases, stepFunction] >>
+	Cases_on `reducible R x`
+	>- (fs[Once terminatesOn_cases, reducible] >>
+		Cases_on `f x`)
+	>>
+	rw[computable, normalizes, Once evaluates_cases, stepFunction, Once terminatesOn_cases] >>
+	qexists_tac `x` >> rw[] >>
+	`case f x of NONE => ∀y. ¬R x y | SOME y => R x y` by metis_tac[] >>
+	Cases_on `f x` >> gvs[reducible] >>
+	first_x_assum drule >> rw[] >>
+	fs[Once terminatesOn_cases] >>
+QED
+
+Theorem evaluates_irred:
+	evaluates R x y ⇒ ¬reducible R y
+Proof
+QED
+
+(*
+
+Lemma normalizes_terminates (X : ARS) :
+  functional (≻X) ->
+  forall (x:X), normalizes x -> terminatesOn (≻) x.
+Proof.
+  intros FN x [x' ?]. induction H.
+  - econstructor. intros x' ?; destruct H. eauto.
+  - econstructor. intros x' ?. now rewrite (FN _ _ _ H1 H).
+Qed.
+
+Lemma terminates_normalizes (X : ARS) :
+  computable (≻X) ->
+  forall (x:X), terminatesOn (≻) x -> normalizes x.
+Proof.
+  intros C%computable_classical x. induction 1.
+  destruct (C x) as [ [a' Hstep] | ].
+  - destruct (H _ Hstep) as [a'']. exists a''. eauto using evaluates.
+  - exists x. now econstructor.
+Qed.
+
+Lemma evaluates_irred (X : ARS) (x y : X):
+  x ▷ y -> ~ reducible (≻) y.
+Proof.
+  induction 1; eauto.
+Qed.
+*)
+
+
+
+
+(* ------------------
+	      Misc
+   ------------------ *)
+
+Definition noneHolds:
+	noneHolds Ps =
+		case Ps of
+			| [] => T
+			| P::Ps => ¬P ∧ noneHolds Ps
+End
+
+Definition exactlyOneHolds:
+	exactlyOneHolds Ps =
+		case Ps of
+			| [] => F
+			| P::Ps => (P ∧ noneHolds Ps) ∨ (¬P ∧ exactlyOneHolds Ps)
+End
+
+(*
+
+Ltac noneHoldsI :=
+  lazymatch goal with
+    |- noneHolds [] => now constructor
+  | |- noneHolds (_::_) => split;[|noneHoldsI]
+  end.
+
+Ltac exactlyOneHoldsI n :=
+  lazymatch n with
+  | 1 =>  left;split;[|noneHoldsI]
+  | S ?n => right;split;[|exactlyOneHoldsI n]
+  end.
+
+Ltac inv_noneHolds H :=
+  lazymatch type of H with
+  | noneHolds [] => clear H
+  | noneHolds (_::_) => let tmp := fresh "tmp" in destruct H as [? tmp];inv_noneHolds tmp
+  end.
+
+Ltac inv_exactlyOneHolds H :=
+  lazymatch type of H with
+  | exactlyOneHolds [] => now inversion H
+  | exactlyOneHolds (_::_) => let tmp := fresh "tmp" in destruct H as [[? tmp]|[? tmp]];[inv_noneHolds tmp|inv_exactlyOneHolds tmp]
+  end.
+
+*)
+
+(** Nicer Notation for Option *)
+
+(*
+Notation "'try' x ':='  t 'in' u":=
+  (match t with Some x => u | None => None end)
+    (at level 200, right associativity).
+*)
+
+
+val _ = export_theory ()
