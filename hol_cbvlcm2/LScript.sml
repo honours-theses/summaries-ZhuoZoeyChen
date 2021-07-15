@@ -113,58 +113,31 @@ Definition redL:
 			| _ => NONE
 End
 
-Theorem redL_eq_NONE:
-∀s.
-	redL s = NONE ⇒
-		((∃l r. s = app l r ∧ (redL r = NONE)) ∨
-		 (∃l r. s = app l r ∧ (redL l = NONE) ∧ ¬(∃l'. l = lam l')) ∨
-		 (∃n r. s = app (var n) r) ∨
-		 (∃n. s = var n) ∨
-		 (∃s'. s = lam s'))
-Proof
-	ho_match_mp_tac redL_ind >> rw[] >> Induct_on `s`
-	>- rw[Once redL]
-	>-
-QED
-
 Theorem stepL_computable:
 	stepFunction stepL redL
 Proof
-	simp[stepFunction] >> ho_match_mp_tac redL_ind >> rw[] >> Induct_on `x`
+	simp[stepFunction] >> ho_match_mp_tac redL_ind >> rw[] >> Cases_on `x`
 	>- rw[redL, Once stepL_cases]
-	>- (rw[] >> Cases_on `redL (app x x')` >> rw[]
-		>- ()
-		>>)
-
-
-	Induct_on `x`
-	>- gvs[redL, Once stepL_cases]
-	>- (rw[Once redL] >> Cases_on `x`
-		>- (rw[] >> Cases_on `x`
-			>- (rw[redL, Once stepL_cases] >> rw[Once stepL_cases])
-			>- ())
-		>-
-		>>)
-	>>
-
-
-	ho_match_mp_tac redL_ind
-	Cases_on `redL x`
-	>- (rw[] >> pop_assum mp_tac >> qid_spec_tac `x` >> ho_match_mp_tac redL_ind >>
-		rw[] >> Cases_on `x`
-		>- gvs[redL, Once stepL_cases]
-		>- (gvs[Once redL] >> Cases_on `t` >> ))
-	qid_spec_tac `x` >> ho_match_mp_tac redL_ind >> rw[] >>
-	Cases_on `x`
-	>- gvs[redL, Once stepL_cases]
-	>- (Cases_on `app t t0` >> )
-	Cases_on `redL x` >>
-	>- (rw[] >> Cases_on `x`
-		>- gvs[redL, Once stepL_cases]
-		>- (Cases_on `app t t`)
-		>>)
-	>>
+	>- (rw[] >> Cases_on `t`
+		>- (rw[redL, Once stepL_cases] >> rw[redL, Once stepL_cases])
+		>- (rw[Once redL] >> Cases_on `redL (app t' t0')` >> fs[] >> rw[Once stepL_cases])
+		>> fs[] >> rw[] >> rw[Once redL] >> Cases_on `t0`
+		>- (rw[redL, Once stepL_cases] >> rw[redL, Once stepL_cases])
+		>- (fs[] >> rw[] >> Cases_on `redL (app t t0')`  >>
+			fs[] >> rw[Once stepL_cases] >> rw[Once stepL_cases])
+		>> fs[] >> rw[Once stepL_cases])
+	>> rw[Once redL, Once stepL_cases]
 QED
+
+(*
+Theorem stepL_computable: 
+	stepFunction stepL redL 
+Proof 
+	simp[stepFunction] >>   ho_match_mp_tac redL_ind >>   rw[] >> 
+	rw[Once redL] >>   rpt(BasicProvers.PURE_TOP_CASE_TAC >> gvs[]) >> 
+	gvs[AllCaseEqs()] >>   rw[Once stepL_cases] >>   rw[Once stepL_cases] 
+QED
+*)
 
 (* ------------------------------------
 	   Bound & Closedness for Terms
@@ -172,7 +145,7 @@ QED
 
 Inductive boundL:
 	(∀k n. n < k ⇒ boundL (var n) k) ∧
-	(∀k s t. boundL s k ⇒ boundL t k ⇒ boundL (s t) k) ∧
+	(∀k s t. boundL s k ∧ boundL t k ⇒ boundL (app s t) k) ∧
 	(∀k s. boundL s (SUC k) ⇒ boundL (lam s) k)
 End
 
@@ -203,43 +176,18 @@ Proof
 		>- (rw[Once stuck_cases] >> rw[Once stuck_cases])
 		>- (rw[Once stuck_cases] >> rw[Once stuck_cases])
 		>> fs[Once stepL_cases] >> rw[Once stuck_cases])
-
-	>> Cases_on `stuck s` >> rw[]
-	>- fs[Once abstraction_cases, Once stuck_cases]
-	>> fs[reducible, Once stepL_cases, Once stuck_cases] >>
-	Cases_on `s` >> gvs[]
-	>- (Cases_on `t`
-		>- gvs[Once stuck_cases]
-		>- (gvs[] >> rw[abstraction_cases] >>
-			fs[Once stepL_cases, Once stuck_cases] >>
-			rename [`∀s. x = lam s ⇒ ¬stuck y`] >>
-			Cases_on `x`
-			>- gvs[Once stuck_cases]
-			>- (gvs[Once stuck_cases] >> fs[Once stepL_cases, Once stuck_cases] >>
-				Cases_on `t`
-				>- )
-
-			pop_assum mp_tac >> pop_assum mp_tac >>
-			MAP_EVERY qid_spec_tac [`t'`, `t0'`] >>
-			ho_match_mp_tac stuck_strongind >> rw[]))
-	>> gvs[Once abstraction_cases]
-
-
 	>> Cases_on `abstraction s` >> rw[]
 	>- fs[Once abstraction_cases, Once stuck_cases] >>
 	fs[reducible] >> Induct_on `s` >> rw[]
-
-	>> CCONTR_TAC >>
-	fs[reducible, Once stepL_cases, Once abstraction_cases, Once stuck_cases] >>
-	Cases_on `s` >> gvs[] >> Cases_on `t` >> gvs[]
 	>- gvs[Once stepL_cases, Once stuck_cases]
-	>- (gvs[Once stepL_cases, Once stuck_cases])
-
-
-
-		>- (rw[Once stuck_cases] >> rw[Once stuck_cases, Once stepL_cases])
-		>- )
-	>>
+	>- (simp[Once stuck_cases] >>
+		qpat_x_assum `∀x. ¬stepL _ _` (strip_assume_tac o ONCE_REWRITE_RULE[stepL_cases]) >>
+		fs[] >> Cases_on `s` >> gvs[]
+		>- rw[Once stuck_cases]
+		>- fs[Once abstraction_cases]
+		>> fs[Once abstraction_cases] >> rw[] >> Cases_on `∃s. s' = lam s` >> fs[] >>
+		gvs[] >> metis_tac[])
+	>> fs[Once abstraction_cases]
 QED
 
 Theorem stuck_normal:
