@@ -32,9 +32,6 @@ Inductive abstraction:
 	∀s. abstraction (lam s)
 End
 
-
-
-
 (* ------------------
 	  Substitution
    ------------------ *)
@@ -46,9 +43,6 @@ Definition subst:
 			| app s t => app (subst s k u) (subst t k u)
 			| lam s => lam (subst s (SUC k) u)
 End
-
-
-
 
 (* ------------------
 	   Reduction
@@ -65,7 +59,7 @@ End
 
 (*
 Notation "(≻L)" := stepL (at level 0).*)
-(* workaround to prefere "x ≻ y" over "(≻) x y"*) Notation "s '≻L' t" := 0.
+(* workaround to prefere "x ≻ y" over "(≻) x y"*) (* Notation "s '≻L' t" := 0. *)
 (*Notation "s '≻L' t" := (stepL s t).
 *)
 
@@ -119,10 +113,42 @@ Definition redL:
 			| _ => NONE
 End
 
+Theorem redL_eq_NONE:
+∀s.
+	redL s = NONE ⇒
+		((∃l r. s = app l r ∧ (redL r = NONE)) ∨
+		 (∃l r. s = app l r ∧ (redL l = NONE) ∧ ¬(∃l'. l = lam l')) ∨
+		 (∃n r. s = app (var n) r) ∨
+		 (∃n. s = var n) ∨
+		 (∃s'. s = lam s'))
+Proof
+	ho_match_mp_tac redL_ind >> rw[] >> Induct_on `s`
+	>- rw[Once redL]
+	>-
+QED
+
 Theorem stepL_computable:
 	stepFunction stepL redL
 Proof
-	rw[stepFunction] >>
+	simp[stepFunction] >> ho_match_mp_tac redL_ind >> rw[] >> Induct_on `x`
+	>- rw[redL, Once stepL_cases]
+	>- (rw[] >> Cases_on `redL (app x x')` >> rw[]
+		>- ()
+		>>)
+
+
+	Induct_on `x`
+	>- gvs[redL, Once stepL_cases]
+	>- (rw[Once redL] >> Cases_on `x`
+		>- (rw[] >> Cases_on `x`
+			>- (rw[redL, Once stepL_cases] >> rw[Once stepL_cases])
+			>- ())
+		>-
+		>>)
+	>>
+
+
+	ho_match_mp_tac redL_ind
 	Cases_on `redL x`
 	>- (rw[] >> pop_assum mp_tac >> qid_spec_tac `x` >> ho_match_mp_tac redL_ind >>
 		rw[] >> Cases_on `x`
@@ -140,9 +166,6 @@ Proof
 	>>
 QED
 
-
-
-
 (* ------------------------------------
 	   Bound & Closedness for Terms
    ------------------------------------ *)
@@ -156,9 +179,6 @@ End
 Definition closedL:
 	closedL s = boundL s 0
 End
-
-
-
 
 (* ------------------
 	   Reduction
