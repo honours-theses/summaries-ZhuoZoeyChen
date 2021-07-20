@@ -52,11 +52,11 @@ Coercion Machine_ARS : Machine >-> ARS.
     Notation "a ≫ x" := (refines a x) (at level 70). *)
 
 Definition refinement_ARS:
-refinement_ARS (refines:'a -> 'b -> bool) (Rx: 'b rel) (Rt: 'a rel) (Rb: 'a rel) =
-	(∀a x. refines a x ⇒ reducible Rx x ⇒ reducible (Rb ∪ᵣ Rt) a) ∧
-	(∀a a' x. refines a x ⇒ Rt a a' ⇒ refines a' x) ∧
-	(∀a a' x. refines a x ⇒ Rb a a' ⇒ ∃x'. refines a' x' ∧ Rx x x') ∧
-	(∀a x. refines a x ⇒ terminatesOn Rt a)
+  refinement_ARS (refs: 'a -> 'b -> bool) (Rx: 'b rel) (Rt: 'a rel) (Rb: 'a rel)  =
+  	((∀a x. refs a x ∧ reducible Rx x ⇒ reducible (Rt ∪ᵣ Rb) a) ∧
+     (∀a a' x. refs a x ∧ Rt a a' ⇒ refs a' x) ∧
+  	 (∀a a' x. refs a x ∧ Rb a a' ⇒ (∃x'. refs a' x' ∧ Rx x x')) ∧
+  	 (∀a x. refs a x ⇒ terminatesOn Rt a))
 End
 (*
     Definition refinement_ARS :=
@@ -83,33 +83,69 @@ End
       Hypothesis H : a ≫ x.
 *)
 
-Theorem refinement_correctness: (* Fact6 *)
-	refinement a x ⇒
-	((evaluates Ra a a' ⇒ ∃x'. refinement a' x' ∧ evaluates Rx x x') ∧
-	 (evaluates Ra a a' ⇒ refinement a' x' ⇒ functional refinement ⇒ evaluates Rx x x') ∧
-	 (terminatesOn Rx x ⇒ terminatesOn Ra a)∧
-	  terminatesOn Rx x ⇒ computable Ra ⇒ ∃a'. evaluates Ra a a')
+Theorem upSim:
+  ∀refs Rx Rt Rb a x a'.
+    refinement_ARS refs Rx Rt Rb ⇒
+    refs a x ⇒
+    evaluates (Rt ∪ᵣ Rb) a a' ⇒
+    (∃x'. refs a' x' ∧ evaluates Rx x x')
 Proof
+  rw[] >> pop_assum mp_tac >> pop_assum mp_tac >>
+  MAP_EVERY qid_spec_tac [`x`, `a'`, `a`] >>
+  Induct_on `evaluates` >> rw[]
+  >- (fs[refinement_ARS] >> qexists_tac `x` >> rw[] >>
+      simp[Once evaluates_cases] >> DISJ1_TAC >>
+      CCONTR_TAC >> rw[] >> last_x_assum drule >> strip_tac >>
+      first_x_assum drule >> rw[])
+  >> fs[refinement_ARS] >> fs[RUNION]
+  >- metis_tac[]
+  >> `∃x'. refs a' x' ∧ Rx x x'` by metis_tac[] >>
+  first_x_assum drule >> rw[] >> metis_tac[evaluates_cases]
 QED
 
-(* write seperately *)
+Theorem rightValue:
+  ∀refs Rx Rt Rb a x a' x'.
+    refinement_ARS refs Rx Rt Rb ⇒
+    refs a x ⇒
+    evaluates (Rt ∪ᵣ Rb) a a' ⇒
+    refs a' x' ⇒
+    functional refs ⇒
+    evaluates Rx x x'
+Proof
+  rw[] >> drule_all upSim >> rw[] >>
+  `x' = x''` by metis_tac[functional] >>
+  gvs[]
+QED
 
-(*
-      Lemma upSim a' :
-        a ▷ a' -> exists x', a' ≫ x' /\ x ▷ x'.
-      Proof with eauto 9 using evaluates.
-        destruct refinement as (R1 & R2 & R3 & R4). intros eva.
-        induction eva as [ | a a' a'' [ [] H0 ]] in x, H; cbn in *. 1-2:now eauto 10 using evaluates.
-        destruct (R3 _ _ _ H H0) as (? & ? & ?).
-        edestruct IHeva as (? & ? & ?)...
-      Qed.*)
-(*
-      Lemma rightValue a' x' :*)
-        (* unique normal forms for X would also suffice *)
-(*        a ▷ a' -> a' ≫ x' -> functional refines -> x ▷ x'.
-      Proof.
-        intros (? & Href1 & ?) % upSim Href2 FN. now rewrite (FN _ _ _ Href2 Href1).
-      Qed.*)
+Theorem termination_propagates:
+  ∀refs Rx Rt Rb a x.
+    refinement_ARS refs Rx Rt Rb ⇒
+    refs a x ⇒
+    terminatesOn Rx x ⇒
+    terminatesOn (Rt ∪ᵣ Rb) a
+Proof
+  Induct_on `terminatesOn` >>  rw[] >>
+  rw[Once terminatesOn_cases] >>
+  rename [`(Rt ∪ᵣ Rb) a a'`] >> reverse(fs[RUNION])
+  >- (qhdtm_assum `refinement_ARS` mp_tac >> PURE_REWRITE_TAC[refinement_ARS] >> strip_tac >>
+      first_x_assum(drule_then drule) >> strip_tac >>
+      last_x_assum drule >> strip_tac >> first_x_assum (match_mp_tac o MP_CANON) >>
+      goal_assum drule >> rw[])
+  >> qhdtm_assum `refinement_ARS` mp_tac >> PURE_REWRITE_TAC[refinement_ARS] >> strip_tac >>
+  `refs a' x` by metis_tac[] >> pop_assum mp_tac >>
+  first_x_assum drule >>
+  simp[Once terminatesOn_cases] >> strip_tac >>
+  first_x_assum drule >> ntac 5 (pop_assum kall_tac) >>
+  pop_assum mp_tac >> Induct_on `terminatesOn` >> rw[] >>
+  rename [`terminatesOn (Rt ∪ᵣ Rb) a`] >> rw[Once terminatesOn_cases] >>
+  rename [`(Rt ∪ᵣ Rb) a a'`] >> reverse(fs[RUNION])
+  >- (qhdtm_assum `refinement_ARS` mp_tac >> PURE_REWRITE_TAC[refinement_ARS] >> strip_tac >>
+      first_x_assum(drule_then drule) >> strip_tac >>
+      last_x_assum drule >> strip_tac >> first_x_assum (match_mp_tac o MP_CANON) >>
+      goal_assum drule >> rw[])
+  >> metis_tac[refinement_ARS]
+QED
+
 (*
       Lemma termination_propagates :
         terminatesOn (≻X) x -> terminatesOn (≻A) a.
@@ -120,7 +156,23 @@ QED
         constructor. intros a' [ [] Hstep].
         - eauto.
         - eapply R3 in Hstep as (? & ? & ?); eauto.
-      Qed.
+      Qed.*)
+
+Theorem evaluation_propagates:
+  ∀refs Rx Rt Rb a x.
+    refinement_ARS refs Rx Rt Rb ⇒
+    refs a x ⇒
+    terminatesOn Rx x ⇒
+    computable (Rt ∪ᵣ Rb) ⇒
+    (∃a'. evaluates (Rt ∪ᵣ Rb) a a')
+Proof
+  rw[] >> drule termination_propagates >> rw[] >>
+  first_x_assum drule >> rw[] >>
+  drule terminates_normalizes >> rw[] >>
+  fs[normalizes]
+QED
+
+(*
       Lemma evaluation_propagates:
         terminatesOn (≻X) x -> computable (≻A) ->
         exists (a':A), a ▷ a'.
@@ -128,9 +180,41 @@ QED
  intros Hter C. specialize Hter as Hter % termination_propagates % terminates_normalizes. all: eauto using evaluates.
       Qed.*)
 
-Theorem tau_evaluates_evaluates:
-	¬reducible Rx x ⇒ evaluates Rt a a' ⇒ refinement Ra a a'
+Theorem refinement_correctness: (* Fact6 *)
+  ∀refs Rx Rt Rb a x.
+    refinement_ARS refs Rx Rt Rb ⇒
+    refs a x ⇒
+    (* upSim *)
+    (∀a'.
+      evaluates (Rt ∪ᵣ Rb) a a' ⇒ ∃x'. refs a' x' ∧ evaluates Rx x x') ∧
+    (* rightValue *)
+    (∀a' x'.
+      evaluates (Rt ∪ᵣ Rb) a a' ⇒
+      refs a' x' ⇒
+      functional refs ⇒
+      evaluates Rx x x') ∧
+    (* termination_propagates *)
+    (terminatesOn Rx x ⇒ terminatesOn (Rt ∪ᵣ Rb) a) ∧
+    (* evaluation_propagates *)
+    (terminatesOn Rx x ⇒
+     computable (Rt ∪ᵣ Rb) ⇒
+     ∃a'. evaluates (Rt ∪ᵣ Rb) a a')
 Proof
+  metis_tac[upSim, rightValue, termination_propagates, evaluation_propagates]
+QED
+
+Theorem tau_evaluates_evaluates:
+  ∀refs Rx Rt Rb a x a'.
+  	refinement_ARS refs Rx Rt Rb ⇒
+    refs a x ⇒
+    ¬reducible Rx x ⇒
+    evaluates Rt a a' ⇒
+    evaluates (Rt ∪ᵣ Rb) a a'
+Proof
+  rw[] >> pop_assum mp_tac >> qpat_x_assum (`refs a x`) mp_tac >> qid_spec_tac `a` >> qid_spec_tac `a'` >>
+  Induct_on `evaluates` >> rw[]
+  >- (fs[refinement_ARS] >> )
+  >>
 QED
 (*
       Lemma tau_evaluates_evaluates a' : ~ reducible (≻X) x -> a ▷τ a' -> a ▷ a'.
