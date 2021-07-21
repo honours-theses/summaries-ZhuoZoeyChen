@@ -247,82 +247,62 @@ Theorem one_downSim:
     computable Rt ⇒
     refs a x ⇒
     Rx x x' ⇒
-    ∃a' a''. Rt a a'' ∧ Rb a'' a' ∧ refs a' x'
+    ∃a' a''. evaluates Rt a a'' ∧ Rb a'' a' ∧ refs a' x'
 Proof
-  rw[] >> drule tau_eval >> rw[] >>
-  fs[refinement_ARS, reducible] >>
-  first_x_assum drule >> rw[] >>
-
-  last_x_assum drule_all >> rw[] >>
-
-
-
-  first_x_assum drule >> rw[] >>
-  drule terminates_normalizes >> rw[] >>
-  first_x_assum drule >> rw[] >>
-  fs[normalizes] >>
-  drule evaluates_irred >> rw[] >>
-  fs[Once evaluates_cases] >> rw[] >> gvs[]
-  >- ()
-  >>
-
-  refinement_ARS
-  terminates_normalizes
-  tau_eval
-  evaluates_irred
+  rw[] >> qhdtm_assum `refinement_ARS` mp_tac >>
+  PURE_REWRITE_TAC[refinement_ARS] >> strip_tac >>
+  fs[reducible] >>
+  `terminatesOn Rt a` by metis_tac[] >>
+  drule_all terminates_normalizes >> rw[] >>
+  fs[normalizes] >> drule evaluates_irred >> rw[] >>
+  rename[`evaluates Rt a a''`] >>
+  drule_all tau_eval >> rw[] >>
+  `∃a'. (Rt ∪ᵣ Rb) a'' a'` by metis_tac[] >> fs[RUNION]
+  >- metis_tac[reducible]
+  >> metis_tac[functional]
 QED
-
-(*
-Lemma one_downSim a x x' :
-  a ≫ x -> x ≻ x' ->
-  exists a' a'', a ▷τ a'' /\ a'' ≻β a' /\ a' ≫ x'.
-Proof.
-  intros H H1.
-  destruct refinement as (R1 & R2 & R3 & R4). cbn in *.
-  destruct (@terminates_normalizes (Build_ARS (M_rel τ)) C _ (R4 _ _ H)) as [a'' H2].
-  edestruct (R1 _ _ (tau_eval H H2)) as [a' [[] H3]]. eexists; eauto.
-  - exists a', a''. edestruct evaluates_irred; eauto.
-  - exists a',a''. repeat split; eauto. destruct (R3 _ _ _ (tau_eval H H2) H3) as (x'' & ? & H5).
-    now rewrite (FN H1 H5).
-Qed.*)
 
 Theorem downSim:
   ∀refs Rx Rt Rb a x x'.
-  refinement_ARS refs Rx Rt Rb ⇒
-  refs a x ⇒
-  functional Rx ⇒
-  computable Rt ⇒
-  evaluates Rx x x' ⇒
-  ∃a'. evaluates (Rt ∪ᵣ Rb) a a' ∧ refs a' x'
+    refinement_ARS refs Rx Rt Rb ⇒
+    functional Rx ⇒
+    computable Rt ⇒
+    refs a x ⇒
+    evaluates Rx x x' ⇒
+    ∃a'. evaluates (Rt ∪ᵣ Rb) a a' ∧ refs a' x'
 Proof
-  rw[] >>
+  ntac 10 strip_tac >>
+  MAP_EVERY qid_spec_tac [`x'`, `x`, `a`] >>
+  Induct_on `evaluates` >> rw[]
+  >- (qhdtm_assum `refinement_ARS` mp_tac >>
+      PURE_REWRITE_TAC[refinement_ARS] >> strip_tac >>
+      first_x_assum drule >> rw[] >>
+      drule_all terminates_normalizes >> rw[] >>
+      fs[normalizes] >> rw[] >>
+      drule_all tau_evaluates_evaluates >> rw[] >>
+      rename [`evaluates (Rt ∪ᵣ Rb) a a'`] >>
+      qexists_tac `a'` >> rw[] >>
+      drule_all tau_eval >> rw[])
+  >> drule_all one_downSim >> rw[] >>
+  first_x_assum drule >> rw[] >>
+  rename [`evaluates (Rt ∪ᵣ Rb) a' a1`] >>
+  qexists_tac `a1` >> rw[] >>
+  `evaluates (Rt ∪ᵣ Rb) a'' a1`
+    by (rw[Once evaluates_cases] >>
+        DISJ2_TAC >> qexists_tac `a'` >> rw[RUNION]) >>
+  metis_tac[evaluates_tau]
 QED
-
-(*
-      Lemma downSim a x x' :
-      a ≫ x -> x ▷ x' -> exists a', a ▷ a' /\ a' ≫ x'.
-    Proof.
-      intros H H1. destruct refinement as (R1 & R2 & R3 & R4). induction H1 in a, H |- *; cbn in *;[intros|].
-      - destruct (@terminates_normalizes (Build_ARS (M_rel τ)) C _ (R4 _ _ H)) as [a' H2].
-        exists a'. split. eapply tau_evaluates_evaluates; eauto. eapply tau_eval; eauto.
-      - destruct (one_downSim H H0) as (a' & a'' & ? & ? & ?). cbn in *.
-        destruct (IHevaluates _ H4) as (a''' & ? & ?).
-        exists a'''. split. eapply evaluates_tau; eauto. econstructor. exists β. eauto. eauto. eauto.
-    Qed.
-  End top_down.
-
-  End assume_refine.
-*)
 
 Theorem fact7:
   ∀refs Rx Rt Rb a x x'.
     refinement_ARS refs Rx Rt Rb ⇒
-    refs a x ⇒
     functional Rx ⇒
     computable Rt ⇒
-    Rx x x' ⇒
-    (∃a' a''. Rt a a'' ∧ Rb a'' a' ∧ refs a' x') ∧
-    ∃a'. evaluates (Rt ∪ᵣ Rb) a a' ∧ refs a' x'
+    refs a x ⇒
+    (Rx x x' ⇒
+     ∃a' a''. evaluates Rt a a'' ∧ Rb a'' a' ∧ refs a' x') ∧
+    (evaluates Rx x x' ⇒
+     ∃a'. evaluates (Rt ∪ᵣ Rb) a a' ∧ refs a' x')
 Proof
   metis_tac[one_downSim, downSim]
 QED
