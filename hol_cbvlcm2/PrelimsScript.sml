@@ -219,6 +219,7 @@ Definition normalizes:
 	normalizes R x = ∃y. evaluates R x y
 End
 
+(* Fact 1.1 *)
 Theorem evaluates_fun:
 	∀R. functional R ⇒ functional (evaluates R)
 Proof
@@ -230,6 +231,7 @@ Proof
 	>> `x' = y''` by metis_tac[] >> gvs[]
 QED
 
+(* Fact 1.2 *)
 Theorem normalizes_terminates:
 	functional R ⇒ (∀x. normalizes R x ⇒ terminatesOn R x)
 Proof
@@ -247,6 +249,7 @@ Proof
 	metis_tac[evaluates_rules,reducible]
 QED
 
+(* Fact 1.3 *)
 Theorem terminates_normalizes:
 	computable R ⇒ ∀x. terminatesOn R x ⇒ normalizes R x
 Proof
