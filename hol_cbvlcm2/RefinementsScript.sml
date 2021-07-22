@@ -52,7 +52,7 @@ Coercion Machine_ARS : Machine >-> ARS.
     Notation "a ≫ x" := (refines a x) (at level 70). *)
 
 Definition refinement_ARS:
-  refinement_ARS (refs: 'a -> 'b -> bool) (Rx: 'b rel) (Rt: 'a rel) (Rb: 'a rel)  =
+  refinement_ARS (refs: 'a -> 'b -> bool) (Rt: 'a rel) (Rb: 'a rel) (Rx: 'b rel)  =
   	((∀a x. refs a x ∧ reducible Rx x ⇒ reducible (Rt ∪ᵣ Rb) a) ∧
      (∀a a' x. refs a x ∧ Rt a a' ⇒ refs a' x) ∧
   	 (∀a a' x. refs a x ∧ Rb a a' ⇒ (∃x'. refs a' x' ∧ Rx x x')) ∧
@@ -85,7 +85,7 @@ End
 
 Theorem upSim:
   ∀refs Rx Rt Rb a x a'.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     refs a x ⇒
     evaluates (Rt ∪ᵣ Rb) a a' ⇒
     (∃x'. refs a' x' ∧ evaluates Rx x x')
@@ -105,7 +105,7 @@ QED
 
 Theorem rightValue:
   ∀refs Rx Rt Rb a x a' x'.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     refs a x ⇒
     evaluates (Rt ∪ᵣ Rb) a a' ⇒
     refs a' x' ⇒
@@ -119,7 +119,7 @@ QED
 
 Theorem termination_propagates:
   ∀refs Rx Rt Rb a x.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     refs a x ⇒
     terminatesOn Rx x ⇒
     terminatesOn (Rt ∪ᵣ Rb) a
@@ -148,7 +148,7 @@ QED
 
 Theorem evaluation_propagates:
   ∀refs Rx Rt Rb a x.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     refs a x ⇒
     terminatesOn Rx x ⇒
     computable (Rt ∪ᵣ Rb) ⇒
@@ -162,7 +162,7 @@ QED
 
 Theorem refinement_correctness: (* Fact6 *)
   ∀refs Rx Rt Rb a x.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     refs a x ⇒
     (* upSim *)
     (∀a'.
@@ -185,7 +185,7 @@ QED
 
 Theorem tau_evaluates_evaluates:
   ∀refs Rx Rt Rb a x a'.
-  	refinement_ARS refs Rx Rt Rb ⇒
+  	refinement_ARS refs Rt Rb Rx ⇒
     refs a x ⇒
     ¬reducible Rx x ⇒
     evaluates Rt a a' ⇒
@@ -209,7 +209,7 @@ QED
 
 Theorem evaluates_tau:
 	∀refs Rx Rt Rb a x a' a''.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     refs a x ⇒
     evaluates Rt a a' ⇒
     evaluates (Rt ∪ᵣ Rb) a' a'' ⇒
@@ -226,7 +226,7 @@ QED
 
 Theorem tau_eval:
   ∀refs Rx Rt Rb a x a'.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     functional Rx ⇒
     computable Rt ⇒
     refs a x ⇒
@@ -242,7 +242,7 @@ QED
 
 Theorem one_downSim:
   ∀refs Rx Rt Rb a x x'.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     functional Rx ⇒
     computable Rt ⇒
     refs a x ⇒
@@ -264,7 +264,7 @@ QED
 
 Theorem downSim:
   ∀refs Rx Rt Rb a x x'.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     functional Rx ⇒
     computable Rt ⇒
     refs a x ⇒
@@ -295,7 +295,7 @@ QED
 
 Theorem fact7:
   ∀refs Rx Rt Rb a x x'.
-    refinement_ARS refs Rx Rt Rb ⇒
+    refinement_ARS refs Rt Rb Rx ⇒
     functional Rx ⇒
     computable Rt ⇒
     refs a x ⇒
@@ -317,40 +317,35 @@ QED
     Notation "a ≫ b" := (refines a b) (at level 70).
 *)
 
+(* refinement_M (refs: 'a -> 'b -> bool) (RtA: 'a rel) (RbA: 'a rel) (RtB: 'b rel) (RbB: 'b rel) *)
 Definition refinement_M:
-	(∀a b. refinement_M a b ⇒ reducible RB b ⇒ reducible RA a) ∧
-	(∀a a' b. refinement_M a b ⇒ Rt a a' ⇒ ∃b' refinement_M a' b' ∧ Rt b b') ∧
-	(∀a a' b. refinement_M a b ⇒ Rb a a' ⇒ ∃b'. refinement_M a' b' ∧ Rb b b')
+  refinement_M refs RtA RbA RtB RbB ⇔
+  	(∀a b. refs a b ∧ reducible (RtB ∪ᵣ RbB) b ⇒ reducible (RtA ∪ᵣ RbA) a) ∧
+  	(∀a a' b. refs a b ∧ RtA a a' ⇒ (∃b'. refs a' b' ∧ RtB b b')) ∧
+  	(∀a a' b. refs a b ∧ RbA a a' ⇒ (∃b'. refs a' b' ∧ RbB b b'))
 End
 
-(*
-    Definition refinement_M :=
-      (forall a b, a ≫ b -> reducible (≻) b -> reducible (≻) a) /\
-      (forall a a' b, a ≫ b -> a ≻τ a' -> exists b', a' ≫ b' /\ b ≻τ b') /\
-      (forall a a' b, a ≫ b -> a ≻β a' -> exists b', a' ≫ b' /\ b ≻β b').
-
-  End refine_M.
-*)
-
+(* refsR: A -> B -> bool
+   refsS: B -> X -> bool *)
 Theorem composition:
-	refinement_M R ⇒ refinement S ⇒ refinement (∃b. R a b ∧ S b c)
+  ∀refsR refsS RtA RbA RtB RbB Rx.
+    refinement_M refsR RtA RbA RtB RbB ⇒
+    refinement_ARS refsS RtB RbB Rx ⇒
+  	refinement_ARS (λa c. (∃b. refsR a b ∧ refsS b c)) RtA RbA Rx
 Proof
+  rw[refinement_ARS, refinement_M]
+  >- metis_tac[]
+  >- metis_tac[]
+  >- metis_tac[]
+  >> first_x_assum drule >> rw[] >>
+  ntac 9 (pop_assum mp_tac) >>
+  MAP_EVERY qid_spec_tac [`refsR`, `RtB`, `RbB`, `RtA`, `RbA`, `refsS`, `a`,`b`,`c`,`Rx`] >>
+  Induct_on `terminatesOn` >> rw[] >>
+  rw[Once terminatesOn_cases] >> rename [`terminatesOn RtA a'`] >>
+  `∃b'. refsR a' b' ∧ RtB b b'` by metis_tac[] >>
+  last_x_assum drule >> rw[] >>
+  `refsS b' c` by metis_tac[] >>
+  ntac 8 (first_x_assum (drule_then assume_tac)) >> rw[]
 QED
-(*
-  Lemma composition (A B : Machine) (X : ARS) (R : A -> B -> Prop) (S : B -> X -> Prop) :
-    refinement_M R -> refinement_ARS S -> refinement_ARS (fun a c => exists b, R a b /\ S b c).
-  Proof.
-    intros (H & H0 & H1) (H2 & H3 & H4 & H5). do 3 try split; intros.
-    - destruct H6 as (? & ? & ?). eauto.
-    - destruct H6 as (? & ? & ?). destruct (H0 _ _ _ H6 H7) as (? & ? & ?). eauto.
-    - destruct H6 as (? & ? & H8). destruct (H1 _ _ _ H6 H7) as (? & ? & H10).
-      destruct (H4 _ _ _ H8 H10) as (? & ? & ?). eauto.
-    - destruct H6 as (? & ? & H7). specialize (H5 _ _ H7).
-      clear H7. induction H5 in a, H6. econstructor. intros ? H7.
-      destruct (H0 _ _ _ H6 H7) as (? & ? & ?). eauto.
-  Qed.
-End absSim.
-*)
-
 
 val _ = export_theory ()
