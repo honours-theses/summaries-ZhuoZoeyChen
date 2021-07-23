@@ -13,6 +13,8 @@ End
 
 (* Inductive Pro := retT | varT (n:nat) (P:Pro) | appT (P:Pro) | lamT (Q P:Pro). *)
 
+(* compilation function γ : Ter → Pro → Pro
+    translates terms into programs: *)
 Definition gamma:
   gamma s P =
     case s of
@@ -30,16 +32,21 @@ Fixpoint γ (s: L.term) P: Pro :=
 
 (* Implicit Types A B : list term. *)
 
+(* decompilation function δ P A of type Pro → L(Ter) → O(L(Ter))
+    translates programs into terms *)
 Definition delta:
   delta P A =
     case P of
     | retT => SOME A
-    | varT n P => (match delta Q [] with
-                  | SOME [s] => delta P (lam s::A)
-                  | _ => NONE)
-    | appT P => (match A with
-                | t::s::A => delta P (app s t::A)
-                | _ => NONE)
+    | varT n P => delta P (var n ::A)
+    | lamT Q P =>
+      (case (delta Q []) of
+        | SOME [s] => delta P (lam s::A)
+        | _ => NONE)
+    | appT P =>
+      (case A of
+        | t::s::A => delta P (app s t::A)
+        | _ => NONE)
 End
 
 (*
@@ -58,33 +65,35 @@ Function δ P A: option (list term) :=
   end.
   *)
 
+(* Fact 10 *)
 Theorem decompile_correct:
-  delta (gamma s P) A = delta P s
+  ∀P A s. delta (gamma s P) A = delta P (s::A)
 Proof
+  Induct_on `s`
+  >- (rw[Once gamma] >> rw[Once delta])
+  >- (rw[Once gamma] >> rw[Once delta])
+  >> rw[Once gamma] >> rw[Once delta] >> rw[Once delta]
 QED
 
-  (*
-Lemma decompile_correct' s P A:
-  δ (γ s P) A = δ P (s::A).
-Proof.
-  induction s in P,A|-*. all:cbn.
-  -congruence.
-  -repeat rewrite append_assoc. rewrite IHs1. cbn. rewrite IHs2. reflexivity.
-  -specialize (IHs retT []).
-   rewrite IHs. reflexivity.
-Qed.*)
-
 Definition repsP:
-  repsP P s = delta P [] = SOME [s]
+  repsP P s ⇔ delta P [] = SOME [s]
 End
 
 (* Definition repsP P s := δ P [] = Some [s].
 Notation "P ≫P s" := (repsP P s ) (at level 70).
 Notation "(>>P)" := repsP (at level 0).*)
 
+(* Fact 11 *)
 Theorem decompile_append:
-  delta P A = SOME A' ⇒ delta P (A++B) = SOME (A'++B)
+  ∀P A A' B.
+    delta P A = SOME A' ⇒ delta P (A ++ B) = SOME (A' ++ B)
 Proof
+  Induct_on `P` >> rw[]
+  >- fs[Once delta]
+  >- ()
+
+  ho_match_mp_tac delta_ind >> rw[] >>
+
 QED
 (*
 Lemma decompile_append P A A' B:
