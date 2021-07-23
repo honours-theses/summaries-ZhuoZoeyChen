@@ -22,13 +22,6 @@ Definition gamma:
       | app s t => gamma s (gamma t (appT P))
       | lam s => lamT (gamma s retT) P
 End
-(*
-Fixpoint γ (s: L.term) P: Pro :=
-  match s with
-    var n => varT n P
-  | app s t => γ s (γ t (appT P))
-  | lam s => lamT (γ s retT) P
-  end.*)
 
 (* Implicit Types A B : list term. *)
 
@@ -48,22 +41,6 @@ Definition delta:
         | t::s::A => delta P (app s t::A)
         | _ => NONE)
 End
-
-(*
-Function δ P A: option (list term) :=
-  match P with
-    retT => Some A
-  | varT n P => δ P (var n::A)
-  | lamT Q P => match δ Q [] with
-               | Some [s] => δ P (lam s::A)
-               | _ => None
-               end
-  | appT P => match A with
-               t::s::A => δ P (app s t::A)
-             | _ => None
-             end
-  end.
-  *)
 
 (* Fact 10 *)
 Theorem decompile_correct:
@@ -90,61 +67,47 @@ Theorem decompile_append:
 Proof
   Induct_on `P` >> rw[]
   >- fs[Once delta]
-  >- ()
-
-  ho_match_mp_tac delta_ind >> rw[] >>
-
+  >- (gs[Once delta] >> first_x_assum drule >> rw[] >>
+      simp[Once delta])
+  >- (gs[Once delta] >> Cases_on `A` >> fs[] >>
+      Cases_on `t` >> fs[] >> first_x_assum drule >> rw[] >>
+      simp[Once delta])
+  >> gs[Once delta] >>
+  Cases_on `delta P []` >> fs[] >>
+  Cases_on `x` >> fs[] >>
+  simp[Once delta] >> Cases_on `t` >> gs[] >> rw[] >>
+  first_x_assum drule >> rw[]
 QED
-(*
-Lemma decompile_append P A A' B:
-  δ P A = Some A' -> δ P (A++B) = Some (A'++B).
-Proof.
-  revert B A'. functional induction (δ P A);intros B A'. all:try congruence;intros eq;cbn in *.
-  -congruence.
-  -erewrite IHo. all:eauto.
-  -rewrite e0. erewrite IHo0. all:eauto.
-  -erewrite IHo. all:eauto.
-Qed.*)
 
 (*Some lemmas to simplify reasoning*)
 
 Theorem decompile_lamT_inv:
-  delta (lamT Q P) A = Some B -> ∃s. delta Q [] = Some [s] ∧ delta P (lam s::A) = Some B.
+  ∀Q P A B.
+    delta (lamT Q P) A = SOME B ⇒
+    (∃s. delta Q [] = SOME [s] ∧ delta P (lam s::A) = SOME B)
 Proof
+  rw[Once delta] >> Cases_on `delta Q []` >> fs[] >>
+  Cases_on `x` >> fs[] >> Cases_on `t` >> fs[]
 QED
-(*
-Lemma decompile_lamT_inv P Q A B:
-  δ (lamT Q P) A = Some B -> exists s, δ Q [] = Some [s] /\ δ P (lam s::A) = Some B.
-Proof.
-  functional inversion 1. subst. cbn. rewrite H3. eauto.
-Qed.*)
 
 Definition substP:
   substP P k R =
-    match P with
+    case P of
       retT => retT
-    | varT n P => if Dec (n=k) then lamT R (substP P k R) else varT n (substP P k R)
-    | lamT Q P => lamT (substP Q (S k) R ) (substP P k R)
+    | varT n P =>
+      if (n = k) then lamT R (substP P k R) else varT n (substP P k R)
+    | lamT Q P => lamT (substP Q (SUC k) R) (substP P k R)
     | appT P => appT (substP P k R)
 End
 
-(*
-Fixpoint substP P (k:nat) R: Pro :=
-  match P with
-    retT => retT
-  | varT n P => if Dec (n=k) then lamT R (substP P k R) else varT n (substP P k R)
-  | lamT Q P => lamT (substP Q (S k) R ) (substP P k R)
-  | appT P => appT (substP P k R)
-  end.
-*)
-
-
 Theorem substP_rep_subst':
-  repsP R t
-  ⇒ delta Q A = SOME B
-  ⇒ delta (substP Q k R) (MAP (subst s k (lam t)) A)
-    = Some (MAP (subst s k (lam t)) B).
+  ∀R t Q A B k R.
+    repsP R t ⇒
+    delta Q A = SOME B ⇒
+    (delta (substP Q k R) (MAP (λs. subst s k (lam t)) A)
+      = SOME (MAP (λs. subst s k (lam t)) B))
 Proof
+
 QED
 
 (*
