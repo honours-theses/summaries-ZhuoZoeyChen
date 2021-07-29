@@ -8,124 +8,189 @@ open ProgramsTheory;
 
 val _ = new_theory "Mstack";
 
-
-Definition stateS : Type := list Pro*list Pro.
-Hint Transparent stateS.
+Type States = ``:(Pro list) # (Pro list)``;
 
 (* Reserved Notation "σ ≻S_ l σ'" (at level 70, l at level 0,format "σ '≻S_' l σ'"). *)
 
-Inductive stepS:
+(* The original coq code had the labels as an argument.
+   The label arguments are removed in this HOL implementation.
+*)
 
+(* τ | β *)
+
+(* T (tasks) for control stack
+   V (values) for argument stack*)
+Inductive stepS:
+  (∀P Q R T V. stepS β ((appT P)::T, R::Q::V) (substP Q 0 R::P::T, V)) ∧
+  (∀P Q T V. stepS τ (lamT Q P::T, V) (P::T, Q::V)) ∧
+  (∀T V. stepS τ (retT::T, V) (T, V))
 End
 
-Inductive stepS : label -> stateS -> stateS -> Prop:=
-| stepS_betaC P Q R T V:
-    ((appT P) :: T,R :: Q ::V) ≻S_β (substP Q 0 R :: P :: T,V)
-| stepS_pushVal P Q T V:
-    (lamT Q P::T,V) ≻S_τ (P::T,Q::V)
-| stepS_nil T V:
-    (retT::T,V) ≻S_τ (T,V)
+(*
 where "σ ≻S_ l σ'" := (stepS l σ σ').
 
 Notation "(≻S_ l )" := (stepS l) (at level 0, format "'(≻S_' l ')'").
-(* workaround to prefere "x ≻ y" over "(≻) x y"*) Notation "σ ≻S_ l σ'" := 0.
+*）
+
+(* workaround to prefere "x ≻ y" over "(≻) x y"*)
+
+(*
+Notation "σ ≻S_ l σ'" := 0.
 Notation "σ ≻S_ l σ'" := (stepS l σ σ').
 Notation "(≻S)" := (any stepS) (at level 0).
 Notation "σ ≻S σ'" := (any stepS σ σ') (at level 70).
 
 Canonical Structure stack_machine := {| M_rel := stepS |}.
+*)
 
-Hint Constructors stepS.
+Theorem tau_functional:
+  functional (stepS τ)
+Proof
+  simp[functional] >> Induct_on `stepS` >> rw[] (* 3 *)
+  >> fs[Once stepS_cases]
+QED
 
-Lemma tau_functional :
-  functional (≻S_β).
-Proof.
-  inversion 1. inversion 1. congruence.
-Qed.
-Lemma beta_functional :
-  functional (≻S_β).
-Proof.
-  inversion 1. inversion 1. congruence.
-Qed.
-Lemma stepS_functional :
-  functional (≻S).
-Proof.
-  intros ? ? ? [? R1] [? R2]. inv R1;inv R2;congruence.
-Qed.
-Lemma tau_terminating σ:
-  terminatesOn (≻S_τ) σ.
-Proof.
-  destruct σ as (T,V). induction T as [|P T] in V|-*.
-  -constructor;intros ? R. inv R.
-  -induction P in V|-*.
-   all:constructor;intros ? R;inv R.
-   all:easy.
-Qed.
-Lemma beta_terminating σ:
-  terminatesOn (≻S_β) σ.
-Proof.
-  destruct σ as (T,V). revert T. induction V using (size_induction (f:=@length _));intros T.
-  constructor. intros ? R. inv R. eapply H. cbn;omega.
-Qed.
-Function δT T A : option (list term) :=
-  match T with
-    [] => Some A
-  | P::T' => match δ P A with
-            | Some A' => δT T' A'
-            | _ => None
-            end
-  end.
+Theorem beta_functional:
+  functional (stepS β)
+Proof
+  simp[functional] >> Induct_on `stepS` >> rw[] (* 3 *)
+  >> fs[Once stepS_cases]
+QED
 
-Function δV V : option (list term) :=
-  match V with
-  | [] => Some []
-  | P::V' => match δ P [],δV V' with
-              Some [s],Some A => Some (lam s::A)
-            | _,_ => None
-            end
-  end.
+Theorem stepS_functional:
+  ∀l. functional (stepS l)
+Proof
+  simp[functional] >> Induct_on `stepS` >> rw[] (* 3 *)
+  >> fs[Once stepS_cases]
+QED
 
-Definition repsSL : stateS -> term -> Prop :=
-  fun '(T,V) s => exists A, δV V = Some A /\ δT T A = Some [s].
+Theorem tau_terminating:
+  ∀x. terminatesOn (stepS τ) x
+Proof
+  rw[Once terminatesOn_cases] >>
+  PairCases_on `x` >> rename [`stepS τ (Ts,V) x'`] >>
+  pop_assum mp_tac >> MAP_EVERY qid_spec_tac [`V`, `x'`] >>
+  Induct_on `Ts`
+  >- rw[Once stepS_cases]
+  >> Induct_on `h` >>
+  rw[Once stepS_cases, Once terminatesOn_cases] >> metis_tac[]
+QED
+
+Theorem beta_terminating:
+  ∀x. terminatesOn (stepS β) x
+Proof
+  rw[Once terminatesOn_cases] >>
+  PairCases_on `x` >> rename [`stepS β (Ts,V) x'`] >>
+  pop_assum mp_tac >> MAP_EVERY qid_spec_tac [`Ts`, `x'`] >>
+  Q.SUBGOAL_THEN `∃n. n = LENGTH V` strip_assume_tac >- metis_tac[] >>
+  pop_assum mp_tac >> MAP_EVERY qid_spec_tac [`V`, `n`] >>
+  ho_match_mp_tac COMPLETE_INDUCTION >> rw[] >>
+  first_assum mp_tac >> PURE_REWRITE_TAC[Once stepS_cases] >>
+  rw[Once terminatesOn_cases] >>
+  first_x_assum (match_mp_tac o MP_CANON) >>
+  first_x_assum (irule_at (Pos last)) >> rw[]
+QED
+
+(* decompilation function for control stacks
+  type: L(Pro) -> L(term) -> O(L(term)) *)
+Definition deltaT:
+  deltaT Ts A =
+    case Ts of
+    | [] => SOME A
+    | P::Ts' => case (delta P A) of
+               | SOME A' => deltaT Ts' A'
+               | _ => NONE
+End
+
+Definition deltaV:
+  deltaV V =
+    case V of
+    | [] => SOME []
+    | P::V' => case (delta P [], deltaV V') of
+               | (SOME [s], SOME A) => SOME (lam s::A)
+               | _,_ => NONE
+End
+
+Definition repsSL:
+  repsSL (Ts,V) s =
+    ∃A. deltaV V = SOME A ∧ deltaT Ts A = SOME [s]
+End
+
+(*
 Notation "(≫SL)" := (repsSL) (at level 0).
 Notation "σ ≫SL s" := (repsSL σ s) (at level 70).
+*)
 
-Lemma repsSL_functional :
-  functional (≫SL).
-Proof.
-  hnf. unfold repsSL. intros (T,V) ? ?. firstorder subst. congruence.
-Qed.
-Lemma repsSL_computable :
-  computable (≫SL).
-Proof.
-  exists (fun '(T,V) => try A := δV V in match δT T A with Some [s] => Some s | _ => None end). intros [T V];hnf.
-  unfold repsSL. destruct δV. 2:firstorder congruence.
-  destruct δT as [[|? []]|] eqn:eq. 2:eauto. all:intros ? (A&[= ->]&?). all:congruence.
-Qed.
-Only in COq, to prettify reasoning
-Lemma decompileTask_inv P T A B:
-  δT (P:: T) A = Some B -> exists A', δ P A = Some A' /\ δT T A' = Some B.
-  functional inversion 1;subst. eauto.
-Qed.
+Theorem repsSL_functional:
+  functional repsSL
+Proof
+  simp[functional] >> rw[] >>
+  PairCases_on `x` >> fs[repsSL] >> gvs[]
+QED
 
-Only in Coq, to prettify reasoning
-Lemma decompileTask_step P T A A':
-  δ P A = Some A' -> δT (P:: T) A = δT T A'.
-Proof.
-  cbn. now intros ->.
-Qed.
-Only in Coq, to prettify reasoning
-Lemma decompileArg_inv P V A:
-  δV (P::V) = Some A -> exists s A', A=(lam s)::A' /\ δ P [] = Some [s] /\ δV V = Some A'.
-Proof.
-  functional inversion 1;subst. eauto.
-Qed.
-Only in Coq, to prettify reasoning
-Lemma decompileArg_step P V s A :
-  δ P [] = Some [s] -> δV V = Some A -> δV (P::V) = Some (lam s::A).
-Proof.
-  cbn. intros -> ->. tauto.
-Qed.
+Theorem repsSL_computable:
+  computable repsSL
+Proof
+  simp[computable] >>
+  qexists_tac `(λ(Ts, V). case (deltaV V) of
+                          | SOME A => (case (deltaT Ts A) of
+                                       | SOME [s] => (SOME s)
+                                       | _ => NONE)
+                          | NONE => NONE)` >>
+  rw[stepFunction] >> PairCases_on `x` >>
+  rw[repsSL] >>
+  Cases_on `deltaV x1` >> rw[] >>
+  Cases_on `deltaT x0 x` >> rw[] >>
+  Cases_on `x'` >> rw[] >>
+  Cases_on `t` >> rw[]
+QED
+
+Theorem decompileTask_inv:
+  ∀P Ts A B.
+    deltaT (P::Ts) A = SOME B ⇒
+    ∃A'. delta P A = SOME A' ∧ deltaT Ts A' = SOME B
+Proof
+  rw[Once deltaT] >> Cases_on `delta P A` >> fs[]
+QED
+
+Theorem decompileTask_step:
+  ∀P A A' Ts.
+    delta P A = SOME A' ⇒ deltaT (P::Ts) A = deltaT Ts A'
+Proof
+  rw[Once deltaT]
+QED
+
+Theorem decompileArg_inv:
+  ∀P V A.
+    deltaV (P::V) = SOME A ⇒
+    ∃s A'. A = (lam s)::A' ∧ delta P [] = SOME [s] ∧ deltaV V = SOME A'
+Proof
+  rw[Once deltaV] >> Cases_on `delta P []` >> fs[] >>
+  Cases_on `x` >> fs[] >>
+  Cases_on `deltaV V` >> fs[] >>
+  Cases_on `t` >> fs[]
+QED
+
+Theorem decompileArg_step:
+  ∀P s A V.
+    delta P [] = SOME [s] ⇒
+    deltaV V = SOME A ⇒
+    deltaV (P::V) = SOME (lam s::A)
+Proof
+  rw[] >> rw[Once deltaV]
+QED
+
+(*
+Theorem tau_simulation:
+  ∀Ts V s T' V'.
+    repsSL (Ts,V) s ⇒
+    (Ts,V) stepS (T',V') ⇒
+    repsSL (T',V') s
+Proof
+QED
+*)
+
+(*
 Lemma tau_simulation T V T' V' s :
   (T,V) ≫SL s -> (T,V) ≻S_τ (T',V') -> (T',V') ≫SL s.
 Proof.
@@ -136,7 +201,15 @@ Proof.
    erewrite decompileArg_step. 2-3:eassumption.
    erewrite decompileTask_step. all:eauto.
   -cbn in *. eauto.
-Qed.
+Qed.*)
+
+(*
+Theorem decompileArg_abstractions:
+Proof
+QED
+*)
+
+(*
 Lemma decompileArg_abstractions V A:
   δV V = Some A -> Forall abstraction A.
 Proof.
@@ -281,6 +354,6 @@ Lemma compile_stack_L s:
   ([γ s retT],[]) ≫SL s.
 Proof.
   exists []. split. tauto. cbn. rewrite decompile_correct'. tauto.
-Qed.
+Qed.*)
 
 val _ = export_theory ()
