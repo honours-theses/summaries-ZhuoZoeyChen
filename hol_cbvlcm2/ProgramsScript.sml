@@ -25,7 +25,7 @@ End
 
 (* Implicit Types A B : list term. *)
 
-(* decompilation function δ P A of type Pro → L(Ter) → O(L(Ter))
+(* decompilation function δ P A of type Pro → L(Term) → O(L(Term))
     translates programs into terms *)
 Definition delta:
   delta P A =
