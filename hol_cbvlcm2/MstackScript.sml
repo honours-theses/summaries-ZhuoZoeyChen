@@ -18,12 +18,12 @@ Type States = ``:(Pro list) # (Pro list)``;
 
 (* τ | β *)
 
-(* T (tasks) for control stack
+(* Ts (tasks) for control stack
    V (values) for argument stack*)
 Inductive stepS:
-  (∀P Q R T V. stepS β ((appT P)::T, R::Q::V) (substP Q 0 R::P::T, V)) ∧
-  (∀P Q T V. stepS τ (lamT Q P::T, V) (P::T, Q::V)) ∧
-  (∀T V. stepS τ (retT::T, V) (T, V))
+  (∀P Q R Ts V. stepS β ((appT P)::Ts, R::Q::V) (substP Q 0 R::P::Ts, V)) ∧
+  (∀P Q Ts V. stepS τ (lamT Q P::Ts, V) (P::Ts, Q::V)) ∧
+  (∀Ts V. stepS τ (retT::Ts, V) (Ts, V))
 End
 
 (*
@@ -102,6 +102,8 @@ Definition deltaT:
                | _ => NONE
 End
 
+(* decompilation function for argument stacks
+   tyep: L(Pro) → O(L(Term)) *)
 Definition deltaV:
   deltaV V =
     case V of
@@ -145,6 +147,7 @@ Proof
   Cases_on `t` >> rw[]
 QED
 
+(* Only in code, to prettify reasoning *)
 Theorem decompileTask_inv:
   ∀P Ts A B.
     deltaT (P::Ts) A = SOME B ⇒
@@ -153,6 +156,7 @@ Proof
   rw[Once deltaT] >> Cases_on `delta P A` >> fs[]
 QED
 
+(* Only in code, to prettify reasoning *)
 Theorem decompileTask_step:
   ∀P A A' Ts.
     delta P A = SOME A' ⇒ deltaT (P::Ts) A = deltaT Ts A'
@@ -160,6 +164,7 @@ Proof
   rw[Once deltaT]
 QED
 
+(* Only in code, to prettify reasoning *)
 Theorem decompileArg_inv:
   ∀P V A.
     deltaV (P::V) = SOME A ⇒
@@ -171,6 +176,8 @@ Proof
   Cases_on `t` >> fs[]
 QED
 
+
+(* Only in code, to prettify reasoning *)
 Theorem decompileArg_step:
   ∀P s A V.
     delta P [] = SOME [s] ⇒
@@ -180,42 +187,45 @@ Proof
   rw[] >> rw[Once deltaV]
 QED
 
-(*
 Theorem tau_simulation:
   ∀Ts V s T' V'.
     repsSL (Ts,V) s ⇒
-    (Ts,V) stepS (T',V') ⇒
+    stepS τ (Ts,V) (T',V') ⇒
     repsSL (T',V') s
 Proof
+  rw[repsSL] >> fs[Once stepS_cases]
+  >- (qpat_x_assum `deltaT Ts A = SOME [s]` mp_tac >>
+      rw[Once deltaT] >> fs[Once delta] >>
+      Cases_on `delta Q []` >> fs[] >>
+      Cases_on `x` >> fs[] >>
+      Cases_on `t` >> fs[] >>
+      Cases_on `delta P (lam h ::A)` >> fs[] >>
+      rw[Once deltaV, Once deltaT])
+  >> qpat_x_assum `deltaT Ts A = SOME [s]` mp_tac >>
+  rw[Once deltaT] >> fs[Once delta]
 QED
-*)
 
-(*
-Lemma tau_simulation T V T' V' s :
-  (T,V) ≫SL s -> (T,V) ≻S_τ (T',V') -> (T',V') ≫SL s.
-Proof.
-  intros (A&repV&repT) R. inv R.
-  -eapply decompileTask_inv in repT as (A'&rep'&eq1).
-   eapply decompile_lamT_inv in rep' as (t&eq2&eq3).
-   exists (lam t :: A).
-   erewrite decompileArg_step. 2-3:eassumption.
-   erewrite decompileTask_step. all:eauto.
-  -cbn in *. eauto.
-Qed.*)
-
-(*
 Theorem decompileArg_abstractions:
+  ∀V A. deltaV V = SOME A ⇒ Forall abstraction A
 Proof
+  ho_match_mp_tac deltaV_ind >> rw[] >>
+  pop_assum mp_tac >> rw[Once deltaV] >>
+  Cases_on `V` >> fs[]
+  >- rw[Once Forall_cases, abstraction_cases]
+  >> Cases_on `delta h []` >> fs[] >>
+  Cases_on `x` >> fs[] >>
+  Cases_on `t` >> fs[]
+  >- (fs[Once deltaV] >> Cases_on `t'` >> fs[] >>
+      rw[] >> rw[Once Forall_cases, abstraction_cases])
+  >> Cases_on `deltaV (h''::t'')` >> fs[] >> rw[] >>
+  Cases_on `t'` >> fs[] >> rw[] >>
+  rw[Once Forall_cases, abstraction_cases]
 QED
-*)
+
+
+(* Here should be two lemmas only shown in the paper *)
 
 (*
-Lemma decompileArg_abstractions V A:
-  δV V = Some A -> Forall abstraction A.
-Proof.
-  revert A. functional induction (δV V);intros ? H;inv H. all:eauto.
-Qed.
-Here should be two lemmas only shown in the paper
 Lemma substP_rep_subst Q s R t A:
   Q ≫P s ->
   R ≫P t ->
