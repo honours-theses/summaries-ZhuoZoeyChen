@@ -198,6 +198,7 @@ Proof
   rw[Once deltaT] >> fs[Once delta]
 QED
 
+(* Fact 18 *)
 Theorem decompileArg_abstractions:
   ∀V A. deltaV V = SOME A ⇒ Forall abstraction A
 Proof
@@ -305,31 +306,103 @@ Proof
   metis_tac[stepL_rules, stepLs_rules]
 QED
 
+Theorem stepLs_decompileTask:
+  ∀Ts A A1 B.
+    stepLs A A1 ⇒
+    deltaT Ts A = SOME B ⇒
+    ∃B'. stepLs B B' ∧ deltaT Ts A1 = SOME B'
+Proof
+  ho_match_mp_tac deltaT_ind >> rw[] >>
+  pop_assum mp_tac >> simp[Once deltaT] >>
+  simp[AllCaseEqs()] >> rw[]
+  >- simp[Once deltaT]
+  >> first_x_assum drule >> rw[] >>
+  `∃B'. stepLs A' B' ∧ delta P A1 = SOME B'`
+    by metis_tac[stepLs_decomp] >>
+  first_x_assum drule >> rw[] >>
+  qexists_tac `B''` >> rw[] >>
+  rw[Once deltaT]
+QED
+
+(* Fact 23 *)
+Theorem beta_simulation:
+  ∀ a a' s.
+    stepS β a a' ⇒
+    repsSL a s ⇒
+    ∃s'. repsSL a' s' ∧ stepL s s'
+Proof
+  Induct_on `stepS` >> rw[] >>
+  fs[repsSL, Once stepS_cases] >> gvs[] >>
+  drule decompileArg_inv >> rw[] >>
+  drule decompileArg_inv >> rw[] >> rw[] >>
+  drule decompileTask_inv >> rw[] >>
+  rename [`deltaV (R::Q::V) = SOME (lam t::lam u::A)`] >>
+  qpat_x_assum `delta (appT P) (lam t::lam t'::A) = SOME A'` mp_tac >>
+  rw[Once delta] >>
+
+
+  `stepLs (lam t::lam u::A) (lam t::lam u::A) ⇒
+   deltaT (appT P::Ts) (lam t::lam u::A) = SOME [s] ⇒
+   ∃B'. stepLs [s] B' ∧ deltaT (appT P::Ts) (lam t::lam u::A) = SOME B'`
+      by metis_tac[stepLs_decompileTask] >> gvs[] >>
+  drule decompileArg_abstractions >> rw[] >>
+
+
+  `stepLs (lam t::lam u::A) (lam t::lam u::A)` by fs[stepLs_rules]
+
+
+  `stepL (app (lam u) (lam t))
+         (subst u 0 (lam t))` by metis_tac[stepL_cases] >>
+  drule decompileArg_abstractions >> rw[] >> gvs[] >>
+  `delta (substP Q 0 R) A = SOME (subst u 0 (lam t)::A)`
+    by metis_tac[substP_rep_subst, repsP] >>
+  `stepLs ((app (lam u) (lam t))::A) ((subst u 0 (lam t))::A)`
+    by metis_tac[stepLs_rules] >>
+
+      drule decompileTask_step >> rw[] >>
+  metis_tac[stepLs_decompileTask]
+
+
+
+  `∀A1.
+    stepLs (lam t::lam u::A) A1 ⇒
+    deltaT (appT P::Ts) (lam t::lam u::A) = SOME [s] ⇒
+    ∃B'. stepLs [s] B' ∧ deltaT (appT P::Ts) A1 = SOME B'`
+  by metis_tac[stepLs_decompileTask] >> gvs[] >>
+
+  fs[Once stepLs_cases] >> gvs[Once Forall_cases, Once abstraction_cases] >>
+  drule decompileArg_abstractions >> rw[] >> gvs[] >>
+
+
+
+  drule decompileTask_inv >> rw[] >>
+
+  drule decompileArg_abstractions >> rw[] >>
+
+  qpat_x_assum `deltaV (R::Q::V') = SOME A` mp_tac >>
+  simp[Once deltaV] >> rw[Once delta] >>
+  Cases_on `R` >> fs[]
+  rw[Once deltaV]
+
+  Cases_on `V0` >> gvs[]
+  >- (ntac 2 (pop_assum mp_tac) >> rw[Once deltaV, Once deltaT] >>
+      Cases_on `T0` >> fs[] >> fs[Once delta] >> Cases_on `h` >> fs[]
+      (* 3 *) >> fs[Once stepS_cases])
+
+lemma 22: stepLs_decomp
+
+  decompileArg_inv
+  decompileArg_inv
+  decompileTask_inv
+  stepLs_decompileTask
+fact 18:  decompileArg_abstractions
+  decompileTask_step
+  stepLs_singleton_inv
+  substP_rep_subst
+
+QED
 (*
-Lemma stepLs_decomp P A A' B:
-  A ≻Ls A' -> δ P A = Some B ->
-  exists B', B ≻Ls B' /\ δ P A' = Some B'.
-Proof.
-  revert A' B. functional induction (δ P A). all:try congruence.
-  all:intros A' B R repP.
-  -inv repP. eauto.
-  -eauto.
-  -cbn. rewrite e0. eauto.
-  -repeat (match goal with [ H: (_::_) ≻Ls _ |- _ ] => inv H end).
-   all:invAll.
-   all:eauto.
-Qed.
-Lemma stepLs_decompileTask T A A1 B:
-  A ≻Ls A1 ->
-  δT T A = Some B ->
-  exists B', B ≻Ls B' /\ δT T A1 = Some B'.
-Proof.
-  revert A1 B. functional induction (δT T A);try congruence.
-  all:intros A1 B1 R eq.
-  -cbn. inv eq. eauto.
-  -edestruct stepLs_decomp as (?&?&repP). 1,2:eassumption.
-   rewrite (decompileTask_step _ repP). eauto.
-Qed.
+
 Lemma beta_simulation (σ σ':_) s:
   σ ≻S_β σ' -> σ ≫SL s ->
   exists s', σ' ≫SL s' /\ s ≻L s'.
@@ -351,32 +424,57 @@ Proof.
    rewrite <- repB. apply decompileTask_step.
    apply substP_rep_subst. all:tauto.
 Qed.
-Inductive stuckLs : list term -> Prop :=
-  stuckLsHere s A : Forall abstraction A -> stuck s -> stuckLs (s::A)
-| stuckLsThere s A : stuckLs A -> stuckLs (s::A).
+*)
 
-Hint Constructors stuck stuckLs.
+Inductive stuckLs:
+  (∀s A. Forall abstraction A ∧ stuck s ⇒ stuckLs (s::A)) ∧
+  (∀s A. stuckLs A ⇒ stuckLs (s::A))
+End
 
-Lemma stuck_decompile A B P:
-  stuckLs A -> δ P A = Some B -> stuckLs B.
-Proof.
-  functional induction (δ P A);try congruence;cbn;intros H eq.
-  -apply IHo. all:eauto.
-  -apply IHo0. all:eauto.
-  -apply IHo.
-   all:repeat match goal with
-                H : stuckLs (_::_) |- _ => inv H
-              | H: Forall _ (_::_) |- _ => inv H
-              | H: abstraction _ |- _ => inv H
-              end.
-   all:eauto.
-Qed.
-Lemma stuck_decompileTask T A B:
-  stuckLs A -> δT T A = Some B -> stuckLs B.
-Proof.
-  revert B. functional induction (δT T A);try congruence. intros B ? ?.
-  eapply stuck_decompile in e0. all:eauto.
-Qed.
+Theorem stuck_decompile:
+  ∀P A B.
+    stuckLs A ⇒
+    delta P A = SOME B ⇒
+    stuckLs B
+Proof
+  ho_match_mp_tac delta_ind >> rw[] >>
+  pop_assum mp_tac >> simp[Once delta] >>
+  simp[AllCaseEqs()] >> rw[] >> rw[]
+  >- fs[Once stuckLs_cases]
+  >- (fs[Once stuckLs_cases] >>
+      first_x_assum irule >> rw[] >>
+      qpat_x_assum `stuckLs (t::s::A')` mp_tac >>
+      rw[Once stuckLs_cases]
+      >- (qpat_x_assum `Forall abstraction (s::A')` mp_tac >>
+          rw[Once Forall_cases, Once stuck_cases, Once abstraction_cases])
+      >> qpat_x_assum `stuckLs (s::A')` mp_tac >>
+      rw[Once stuckLs_cases] >> rw[Once stuck_cases])
+  >> metis_tac[stuckLs_cases]
+QED
+
+Theorem stuck_decompileTask:
+  ∀Ts A B.
+    stuckLs A ⇒
+    deltaT Ts A = SOME B ⇒
+    stuckLs B
+Proof
+  ho_match_mp_tac deltaT_ind >> rw[] >>
+  pop_assum mp_tac >> simp[Once deltaT] >>
+  simp[AllCaseEqs()] >> rw[] >> rw[] >>
+  metis_tac[stuck_decompile]
+QED
+
+Theorem stateS_trichotomy:
+  ∀Ts V s.
+    repsSL (Ts, V) s ⇒
+    reducible (any stepS) (Ts, V)
+    ∨ (∃P s'. (Ts, V) = ([], [P]) ∧ s = lam s' ∧ repsP P s')
+    ∨ (∃x P T'. Ts = varT x P::T' ∧ stuck s)
+Proof
+  rw[repsSL, reducible, any] >> cheat
+QED
+
+(*
 Lemma stateS_trichotomy T V s:
   (T,V) ≫SL s ->
   reducible (≻S) (T,V)
