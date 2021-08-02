@@ -19,18 +19,12 @@ Type States = ``:(Pro list) # (Pro list)``;
 (* τ | β *)
 
 (* Ts (tasks) for control stack
-   V (values) for argument stack*)
+   V (values) for argument stack *)
 Inductive stepS:
   (∀P Q R Ts V. stepS β ((appT P)::Ts, R::Q::V) (substP Q 0 R::P::Ts, V)) ∧
   (∀P Q Ts V. stepS τ (lamT Q P::Ts, V) (P::Ts, Q::V)) ∧
   (∀Ts V. stepS τ (retT::Ts, V) (Ts, V))
 End
-
-(*
-where "σ ≻S_ l σ'" := (stepS l σ σ').
-
-Notation "(≻S_ l )" := (stepS l) (at level 0, format "'(≻S_' l ')'").
-*）
 
 (* workaround to prefere "x ≻ y" over "(≻) x y"*)
 
@@ -176,7 +170,6 @@ Proof
   Cases_on `t` >> fs[]
 QED
 
-
 (* Only in code, to prettify reasoning *)
 Theorem decompileArg_step:
   ∀P s A V.
@@ -222,35 +215,37 @@ Proof
   rw[Once Forall_cases, abstraction_cases]
 QED
 
-
 (* Here should be two lemmas only shown in the paper *)
+(* Lemma 21 *)
+Theorem substP_rep_subst:
+  ∀Q R A s t.
+    repsP Q s ⇒
+    repsP R t ⇒
+    delta (substP Q 0 R) A = SOME (subst s 0 (lam t)::A)
+Proof
+  rw[] >> qpat_x_assum `repsP Q s` mp_tac >> rw[repsP] >>
+  drule_all substP_rep_subst' >> rw[] >>
+  `delta (substP Q 0 R) [] = SOME [subst s 0 (lam t)]` by fs[] >>
+  metis_tac[decompile_append, APPEND]
+QED
 
+(* Reserved Notation "s '≻Ls' t" (at level 70). *)
+
+Inductive stepLs:
+  (∀s t A. stepL s t ∧ Forall abstraction A ⇒ stepLs (s::A) (t::A)) ∧
+  (∀s A B. stepLs A B ⇒ stepLs (s::A) (s::B))
+End
+
+(* Only in code *)
+Theorem stepLs_singleton_inv:
+  ∀s B. stepLs [s] B ⇒ ∃t. B = [t] ∧ stepL s t
+Proof
+  Induct_on `stepLs` >> rw[] >>
+  fs[Once stepLs_cases]
+QED
+
+(* TODO *)
 (*
-Lemma substP_rep_subst Q s R t A:
-  Q ≫P s ->
-  R ≫P t ->
-  δ (substP Q 0 R) A = Some (subst s 0 (lam t)::A).
-Proof.
-  intros ? ?.
-  change A with ([]++A) at 1.
-  erewrite decompile_append with (A':=[_]). reflexivity.
-  apply substP_rep_subst' with (A:=[]) (B:=[s]). all:eassumption.
-Qed.
-Reserved Notation "s '≻Ls' t" (at level 70).
-
-Inductive stepLs : list term -> list term -> Prop :=
-|stepL_here s t A : s ≻L t -> Forall abstraction A -> s::A ≻Ls t::A
-|stepLs_there s A B : A ≻Ls B -> s::A ≻Ls s::B
-where "A '≻Ls' B" := (stepLs A B).
-
-Hint Constructors stepLs.
-
-Only in Coq
-Lemma stepLs_singleton_inv s B:
-  [s] ≻Ls B -> exists t, B = [t] /\ s ≻L t.
-Proof.
-  inversion_clear 1. eauto. easy.
-Qed.
 Ltac invAll :=
   repeat
     match goal with
@@ -260,7 +255,57 @@ Ltac invAll :=
     | H: Forall _ (_::_) |- _ => inv H
     | H : abstraction _ |- _ => inv H
     end.
+*)
 
+(* Lemma 22 *)
+Theorem stepLs_decomp:
+  ∀P A A' B.
+    stepLs A A' ⇒
+    delta P A = SOME B ⇒
+    ∃B'. stepLs B B' ∧ delta P A' = SOME B'
+Proof
+  ho_match_mp_tac delta_ind >> rw[] >>
+  pop_assum mp_tac >> simp[Once delta] >>
+  simp[AllCaseEqs()] >> rw[] (* 4 *)
+  >- simp[Once delta]
+  >- (simp[Once delta] >>
+      pop_assum mp_tac >> rw[Once stepLs_cases])
+  (* app *)
+  >- (qpat_x_assum `stepLs (t::s::A'') A'` mp_tac >>
+      rw[Once stepLs_cases]
+      (* Lemma22(3):
+           stepL t t'
+           s::A = s'::A'
+           s::A contains only abstractions
+       *)
+      >- (fs[Once Forall_cases, Once abstraction_cases] >>
+          `stepL (app (lam s') t) (app (lam s') t')`
+            by metis_tac[stepL_rules] >> rw[] >> gvs[] >>
+          `stepLs (app (lam s') t::A'') (app (lam s') t'::A'')`
+            by metis_tac[stepLs_rules] >>
+          first_x_assum drule >> rw[] >> rw[Once delta])
+      >> qpat_x_assum `stepLs (s::A'') B'` mp_tac >>
+      rw[Once stepLs_cases]
+      (* Lemma22(2):
+            t = t'
+            stepL s s'
+            A = A'
+            A contains only abstractions
+       *)
+      >- (rename [`stepL s s'`, `Forall abstraction A`] >>
+          rw[Once delta] >> metis_tac[stepL_rules, stepLs_rules])
+      (* Lemma22(1):
+            t = t'
+            s = s'
+            stepL A A' *)
+      >> rename [`stepLs A A'`] >>
+      rw[Once delta] >> metis_tac[stepL_rules, stepLs_rules])
+  (* lam *)
+  >> rw[Once delta] >> first_x_assum drule >> rw[] >>
+  metis_tac[stepL_rules, stepLs_rules]
+QED
+
+(*
 Lemma stepLs_decomp P A A' B:
   A ≻Ls A' -> δ P A = Some B ->
   exists B', B ≻Ls B' /\ δ P A' = Some B'.
