@@ -339,92 +339,27 @@ Proof
   rename [`deltaV (R::Q::V) = SOME (lam t::lam u::A)`] >>
   qpat_x_assum `delta (appT P) (lam t::lam t'::A) = SOME A'` mp_tac >>
   rw[Once delta] >>
-
-
-  `stepLs (lam t::lam u::A) (lam t::lam u::A) ⇒
-   deltaT (appT P::Ts) (lam t::lam u::A) = SOME [s] ⇒
-   ∃B'. stepLs [s] B' ∧ deltaT (appT P::Ts) (lam t::lam u::A) = SOME B'`
-      by metis_tac[stepLs_decompileTask] >> gvs[] >>
-  drule decompileArg_abstractions >> rw[] >>
-
-
-  `stepLs (lam t::lam u::A) (lam t::lam u::A)` by fs[stepLs_rules]
-
-
-  `stepL (app (lam u) (lam t))
-         (subst u 0 (lam t))` by metis_tac[stepL_cases] >>
-  drule decompileArg_abstractions >> rw[] >> gvs[] >>
+  drule decompileTask_step >> rw[] >>
+  first_x_assum (qspecl_then [`Ts`] ASSUME_TAC) >> gvs[] >>
   `delta (substP Q 0 R) A = SOME (subst u 0 (lam t)::A)`
     by metis_tac[substP_rep_subst, repsP] >>
+  `∀A1. stepLs (lam t::lam u::A) A1 ⇒
+   deltaT (appT P::Ts) (lam t::lam u::A) = SOME [s] ⇒
+   ∃B'. stepLs [s] B' ∧ deltaT (appT P::Ts) A1 = SOME B'`
+      by metis_tac[stepLs_decompileTask] >> gvs[] >>
+  pop_assum mp_tac >> rw[Once deltaT, Once delta] >>
+  `stepL (app (lam u) (lam t)) (subst u 0 (lam t))`
+    by metis_tac[stepL_cases] >>
+  drule decompileArg_abstractions >> rw[] >> gvs[] >>
   `stepLs ((app (lam u) (lam t))::A) ((subst u 0 (lam t))::A)`
     by metis_tac[stepLs_rules] >>
-
-      drule decompileTask_step >> rw[] >>
-  metis_tac[stepLs_decompileTask]
-
-
-
-  `∀A1.
-    stepLs (lam t::lam u::A) A1 ⇒
-    deltaT (appT P::Ts) (lam t::lam u::A) = SOME [s] ⇒
-    ∃B'. stepLs [s] B' ∧ deltaT (appT P::Ts) A1 = SOME B'`
-  by metis_tac[stepLs_decompileTask] >> gvs[] >>
-
-  fs[Once stepLs_cases] >> gvs[Once Forall_cases, Once abstraction_cases] >>
-  drule decompileArg_abstractions >> rw[] >> gvs[] >>
-
-
-
-  drule decompileTask_inv >> rw[] >>
-
-  drule decompileArg_abstractions >> rw[] >>
-
-  qpat_x_assum `deltaV (R::Q::V') = SOME A` mp_tac >>
-  simp[Once deltaV] >> rw[Once delta] >>
-  Cases_on `R` >> fs[]
-  rw[Once deltaV]
-
-  Cases_on `V0` >> gvs[]
-  >- (ntac 2 (pop_assum mp_tac) >> rw[Once deltaV, Once deltaT] >>
-      Cases_on `T0` >> fs[] >> fs[Once delta] >> Cases_on `h` >> fs[]
-      (* 3 *) >> fs[Once stepS_cases])
-
-lemma 22: stepLs_decomp
-
-  decompileArg_inv
-  decompileArg_inv
-  decompileTask_inv
-  stepLs_decompileTask
-fact 18:  decompileArg_abstractions
-  decompileTask_step
-  stepLs_singleton_inv
-  substP_rep_subst
-
+  drule_all stepLs_decomp >> rw[] >> gvs[] >>
+  drule_all stepLs_decompileTask >> rw[] >>
+  drule stepLs_singleton_inv >> rw[] >>
+  qexists_tac `t'`  >> rw[] >>
+  drule decompileTask_step >> rw[] >>
+  rw[Once deltaT]
 QED
-(*
-
-Lemma beta_simulation (σ σ':_) s:
-  σ ≻S_β σ' -> σ ≫SL s ->
-  exists s', σ' ≫SL s' /\ s ≻L s'.
-Proof.
-  destruct σ as (T0,V0), σ' as (T',V').
-  intros red (A0&repV'&repT0V0).
-  inversion red as [P Q R T V eql| |]. subst T0 V0 T' V'. clear eql.
-  apply decompileArg_inv in repV' as (u&?&eqA0&repD&repV').
-  apply decompileArg_inv in repV' as (t&A&->&repR&repV). subst A0.
-  apply decompileTask_inv in repT0V0 as (A1&repPA0&repTA1).
-  cbn in repPA0.
-  edestruct stepLs_decompileTask with (B:=[s]) (A:=(lam t) (lam u) :: A) (T:=P::T) as (B&redB&repB).
-  -eauto using decompileArg_abstractions.
-  -rewrite (decompileTask_step _ repPA0). trivial.
-  -apply stepLs_singleton_inv in redB as (s'&->&red').
-   exists s'. split.
-   unfold repsSL.
-   exists A. split. tauto.
-   rewrite <- repB. apply decompileTask_step.
-   apply substP_rep_subst. all:tauto.
-Qed.
-*)
 
 Inductive stuckLs:
   (∀s A. Forall abstraction A ∧ stuck s ⇒ stuckLs (s::A)) ∧
