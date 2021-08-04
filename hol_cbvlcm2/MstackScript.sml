@@ -1,6 +1,7 @@
 open HolKernel Parse boolLib bossLib;
 open arithmeticTheory;
 open listTheory;
+open relationTheory;
 open PrelimsTheory;
 open LTheory;
 open RefinementsTheory;
@@ -401,6 +402,7 @@ Proof
   metis_tac[stuck_decompile]
 QED
 
+(* Fact 26. Trichotomy *)
 Theorem stateS_trichotomy:
   ∀Ts V s.
     repsSL (Ts, V) s ⇒
@@ -455,39 +457,39 @@ Proof
   >> rw[Once stepS_cases]
 QED
 
-(*
-Lemma stateS_trichotomy T V s:
-  (T,V) ≫SL s ->
-  reducible (≻S) (T,V)
-  \/ (exists P s', (T,V)=([],[P]) /\ s = lam s' /\ P ≫P s')
-  \/ (exists x P T', T = varT x P::T' /\ stuck s).
-Proof.
-  intros (A&H1&H2). destruct T as [|[] T]; functional inversion H2;subst.
-  -right. left. functional inversion H1;subst. functional inversion H4;subst. eauto 10.
-  -left. eauto.
-  - right. right. cbn in H4. apply stuck_decompile in H4. 2:now eauto using decompileArg_abstractions.
-    eapply stuck_decompileTask in H7. 2:assumption. inv H7; now eauto.
-  -left. functional inversion H4;subst. functional inversion H1;subst. functional inversion H6;subst. eauto.
-  -left. eauto.
-Qed.
-Lemma reducible_red conf s:
-  conf ≫SL s -> reducible (≻L) s -> reducible (≻S) conf.
-Proof.
-  destruct conf as (T,V). intros H1 R. apply stateS_trichotomy in H1 as [H1|[(?&?&[= -> ->]&->&H1)|(?&?&?&->&H1)]].
-  -assumption.
-  -destruct R as (?&R). inv R.
-  -edestruct stuck_normal. all:eassumption.
-Qed.
-Lemma stack_L_refinement:
-  refinement_ARS (≫SL).
-Proof.
-  repeat (apply conj); cbn. 2:intros [] [].
-  all:eauto using reducible_red, tau_simulation,beta_simulation,tau_terminating.
-Qed.
-Lemma compile_stack_L s:
-  ([γ s retT],[]) ≫SL s.
-Proof.
-  exists []. split. tauto. cbn. rewrite decompile_correct'. tauto.
-Qed.*)
+(* Corollary 27. Progress *)
+Theorem reducible_red:
+  ∀conf s.
+    repsSL conf s ⇒
+    reducible stepL s ⇒
+    reducible (any stepS) conf
+Proof
+  rw[] >> PairCases_on `conf` >>
+  drule stateS_trichotomy >> rw[]
+  >- fs[reducible, Once stepL_cases]
+  >> drule stuck_normal >> rw[]
+QED
+
+(* Theorem 28. Naive Stack Machine to L *)
+Theorem stack_L_refinement:
+  refinement_ARS repsSL (stepS τ) (stepS β) stepL
+Proof
+  rw[refinement_ARS]
+  >- (drule reducible_red >>
+      rw[] >> fs[reducible, any] >>
+      Cases_on `l` >> metis_tac[RUNION])
+  >- (PairCases_on `a` >> PairCases_on `a'` >> metis_tac[tau_simulation])
+  >- (PairCases_on `a` >> PairCases_on `a'` >> metis_tac[beta_simulation])
+  >> metis_tac[tau_terminating]
+QED
+
+Theorem compile_stack_L:
+  ∀s.
+    repsSL ([gamma s retT], []) s
+Proof
+  rw[repsSL] >> qexists_tac `[]` >> rw[Once deltaV, Once deltaT] >>
+  `delta (gamma s retT) [] = delta retT (s::[])`
+    by metis_tac[decompile_correct] >> rw[Once delta, Once deltaT]
+QED
 
 val _ = export_theory ()
