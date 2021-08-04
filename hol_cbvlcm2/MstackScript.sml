@@ -366,6 +366,7 @@ Inductive stuckLs:
   (∀s A. stuckLs A ⇒ stuckLs (s::A))
 End
 
+(* Lemma 24 *)
 Theorem stuck_decompile:
   ∀P A B.
     stuckLs A ⇒
@@ -387,6 +388,7 @@ Proof
   >> metis_tac[stuckLs_cases]
 QED
 
+(* Lemma 25 *)
 Theorem stuck_decompileTask:
   ∀Ts A B.
     stuckLs A ⇒
@@ -406,7 +408,51 @@ Theorem stateS_trichotomy:
     ∨ (∃P s'. (Ts, V) = ([], [P]) ∧ s = lam s' ∧ repsP P s')
     ∨ (∃x P T'. Ts = varT x P::T' ∧ stuck s)
 Proof
-  rw[repsSL, reducible, any] >> cheat
+  rw[repsSL, reducible, any] >> fs[Once deltaT] >>
+  drule decompileArg_abstractions >> rw[] >>
+  Cases_on `Ts` >> rw[]
+  (* [] *)
+  >- (rw[repsP] >>
+      fs[Once deltaV] >> Cases_on `V` >> fs[] >>
+      Cases_on `delta h []` >> fs[] >>
+      Cases_on `x` >> fs[] >>
+      Cases_on `deltaV t` >> fs[] >>
+      Cases_on `t'` >> fs[] >> rw[] >>
+      fs[Once deltaV] >>
+      Cases_on `t` >> fs[] >>
+      Cases_on `delta h'' []`  >> fs[] >>
+      Cases_on `x` >> fs[] >>
+      Cases_on `deltaV t'` >> fs[] >>
+      Cases_on `t` >> fs[]) >>
+  Cases_on `h` >> fs[]
+  (* retT *)
+  >- (fs[Once delta] >> rw[Once stepS_cases] >>
+      Cases_on `delta P0 (var n::A)` >> fs[])
+  (* varT *)
+  >- (Cases_on `delta (varT n P0) A` >> fs[] >>
+      fs[Once delta] >>
+      `stuck (var n)` by rw[Once stuck_rules] >>
+      `stuckLs (var n::A)` by rw[Once stuckLs_rules] >>
+      drule_all stuck_decompile >> rw[] >>
+      drule_all stuck_decompileTask >> rw[] >>
+      pop_assum mp_tac >> rw[Once stuckLs_cases] >> rw[] >>
+      pop_assum mp_tac >> rw[Once stuckLs_cases])
+  (* appT *)
+  >- (rw[Once stepS_cases] >>
+      Cases_on `delta (appT P0) A` >> fs[] >>
+      fs[Once deltaV] >>
+      Cases_on `V` >> fs[]
+      >- (Cases_on `delta (appT P0) A` >> fs[] >>
+          rw[] >> fs[Once delta])
+      >> Cases_on `delta h []` >> fs[] >>
+      Cases_on `x'` >> fs[] >>
+      Cases_on `deltaV t'` >> fs[] >>
+      Cases_on `t''` >> fs[] >>
+      fs[Once deltaV] >>
+      Cases_on `t'` >> fs[] >>
+      rw[] >> fs[Once delta])
+  (* lamT *)
+  >> rw[Once stepS_cases]
 QED
 
 (*
