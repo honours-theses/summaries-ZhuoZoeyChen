@@ -6,51 +6,83 @@ open ProgramsTheory;
 
 val _ = new_theory "Closures";
 
+(* ------------------
+        Closures
+   ------------------ *)
+
+(* A closure is a pair consisting of a program and an environment.
+   An environment is a list of closures representing a delayed substitution.
+*)
+Datatype:
+  Clo = closC Pro (Clo list)
+End
+
+(* With closures we can refine the naive stack machine
+   so that no substitution operation is needed.
+*)
+
+(* ---------------------
+     Substituion Lemmas
+   --------------------- *)
+
+(* substPl stands for parallel substitution operation*)
+(* decompilation of closures into plain programs *)
+(* W ranges over lists of programs *)
+Definition substPl:
+  substPl P k W =
+    case P of
+      retT => retT
+    | varT n P =>
+      (let P' = substPl P k W in
+      if (k>n) then varT n P' else
+        case (nth_error (n-k) W) of
+          SOME Q => lamT Q P'
+        | _ => varT n P')
+    | lamT Q P => lamT (substPl Q (SUC k) W) (substPl P k W)
+    | appT P => appT (substPl P k W)
+End
+
+(* Fact 29. (Parallel Substitution) *)
+
+(* Fact 29.1 *)
+Theorem substPl_nil:
+  ∀P k. substPl P k [] = P
+Proof
+  Induct_on `P` >> rw[Once substPl, Once nth_error]
+QED
+
+(* Fact 29.2 *)
+Theorem boundP_mono:
+  ∀P k k'.
+    boundP P k ⇒
+    k <= k' ⇒
+    boundP P k'
+Proof
+  Induct_on `boundP` >> rw[] >>
+  rw[Once boundP_cases]
+QED
+
+(* Fact 29.3 *)
+Theorem boundP_substP:
+  ∀P Q k.
+    boundP P k ⇒ substP P k Q = P
+Proof
+  Induct_on `boundP` >> rw[] >>
+  rw[Once substP]
+QED
+
+(* Fact 29.4 *)
+Theorem substPl_cons:
+  ∀P Q k W.
+    Forall (λx. boundP x 1) W ⇒
+    substPl P k (Q::W) = substP (substPl P (SUC k) W) k Q
+Proof
+  cheat
+QED
+
 (*
-Inductive Clo := closC (P:Pro) (E : list Clo).
 
-Subtitution Lemmas
-Fixpoint substPl P (k:nat) W: Pro:=
-  match P with
-    retT => retT
-  | varT n P =>
-    let P' := substPl P k W in
-    if Dec (k>n) then varT n P' else
-      match W.[n-k] with
-        Some Q => lamT Q P'
-      | _ => varT n P'
-      end
-  | lamT Q P => lamT (substPl Q (S k) W) (substPl P k W)
-  | appT P => appT (substPl P k W)
-  end.
 
-Lemma substPl_nil P k:
-  substPl P k [] = P.
-Proof.
-  induction P in k |-*. all:cbn.
-  1,3,4:congruence.
-  decide (k>n). congruence.
-  rewrite (proj2 (nth_error_None _ _)). 2:cbn;omega.
-  congruence.
-Qed.
-Lemma boundP_mono P k k':
-  P <P k-> k <= k' -> P <P k'.
-Proof.
-  intros bnd. induction bnd in k'|-*;intros gt. all:cbn.
-  -constructor.
-  -constructor. omega. eauto.
-  -constructor. now apply IHbnd1;omega. now eapply IHbnd2.
-  -constructor. eauto.
-Qed.
-Lemma boundP_substP P Q k:
-  P <P k -> substP P k Q = P.
-Proof.
-  intros bnd. induction bnd. all:cbn.
-  -reflexivity.
-  -decide _. omega. now rewrite IHbnd.
-  -rewrite IHbnd1,IHbnd2. reflexivity.
-  -now rewrite IHbnd.
-Qed.
 Lemma substPl_cons P Q k W:
   Forall (<P 1) W -> substPl P k (Q::W) = substP (substPl P (S k) W) k Q.
 Proof.
