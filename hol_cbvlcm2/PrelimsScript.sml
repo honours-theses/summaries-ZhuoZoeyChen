@@ -72,7 +72,7 @@ Defined.
 (* Notation "A .[ n ]" := (nth_error A n) (at level 1, format "A '.[' n ]").
 Notation "x '∈' A" := (In x A) (at level 70). *)
 
-
+(* A .[ n ]" := (nth_error n A) *)
 Definition nth_error:
 	nth_error 0 (h::_) = SOME h ∧
 	nth_error (SUC n) (_::t) = nth_error n t ∧
@@ -143,6 +143,23 @@ Theorem Forall_map:
 Proof
 	ntac 4 strip_tac >> Induct_on `Forall` >> rw[Forall_rules]
 QED
+
+Theorem Forall_forall:
+    ∀P l. Forall P l ⇔ (∀x. MEM x l ⇒ P x)
+Proof
+	Induct_on `l` >> rw[] >>
+	rw[Once Forall_cases] >> metis_tac[]
+QED
+
+Theorem Forall_MEM:
+  ∀x H P. Forall P H ∧ MEM x H ⇒ P x
+Proof
+  Induct_on `H` >> rw[]
+  >- fs[Once Forall_cases]
+  >> qpat_x_assum `Forall P (h::H)` mp_tac >>
+  rw[Once Forall_cases]
+QED
+
 
 (*
 Hint Extern 4 =>
