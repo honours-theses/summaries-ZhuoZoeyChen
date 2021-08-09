@@ -71,36 +71,79 @@ Proof
   rw[Once substP]
 QED
 
+Theorem Forall_MEM:
+  ∀x H P. Forall P H ∧ MEM x H ⇒ P x
+Proof
+  Induct_on `H` >> rw[]
+  >- fs[Once Forall_cases]
+  >> qpat_x_assum `Forall P (h::H)` mp_tac >>
+  rw[Once Forall_cases]
+QED
+
 (* Fact 29.4 *)
 Theorem substPl_cons:
-  ∀P Q k W.
+  ∀P k W Q.
     Forall (λx. boundP x 1) W ⇒
     substPl P k (Q::W) = substP (substPl P (SUC k) W) k Q
 Proof
-  cheat
+  Induct_on `P` >> rw[] (* 4 *)
+  (* retT *)
+  >- (rw[Once substPl] >> rw[Once substPl] >> rw[Once substP])
+  (* varT *)
+  >- (first_x_assum drule >> rw[] >>
+      rw[Once substPl]
+      >- (`substP (substPl (varT n P) (SUC k) W') k Q =
+           varT n (substP (substPl P (SUC k) W') k Q)`
+            suffices_by simp[] >>
+          rw[Once substPl] >> rw[Once substP])
+      >> fs[NOT_GREATER] >>
+      Cases_on `nth_error (n − k) (Q::W')` >> rw[]
+      >- (`substP (substPl (varT n P) (SUC k) W') k Q =
+           varT n (substP (substPl P (SUC k) W') k Q)`
+            suffices_by simp[] >> rw[Once substPl]
+          >- (`LENGTH (Q::W') ≤ (n-k)` by fs[nth_error_NONE_lt] >>
+              fs[ADD1])
+          >> fs[NOT_GREATER] >> rw[] >>
+          `LENGTH (Q::W') ≤ (n-k)` by fs[nth_error_NONE_lt] >>
+          fs[ADD1] >> rw[] >>
+          `LENGTH W' ≤ n - (k + 1)` by fs[] >>
+          rw[nth_error_lt_NONE] >> rw[Once substP])
+      >> `substP (substPl (varT n P) (SUC k) W') k Q =
+          lamT x (substP (substPl P (SUC k) W') k Q)`
+            suffices_by simp[] >> rw[Once substPl]
+      >- (rw[Once substP] >> fs[ADD1] >> `k = n` by fs[] >>
+          rw[] >> fs[] >> fs[nth_error])
+      >> fs[NOT_GREATER, ADD1] >>
+      drule nth_error_SOME_lemma >> rw[] >>
+      rw[Once substP] >>
+      drule nth_error_SOME_in_H >> rw[] >>
+      drule_all Forall_MEM >> rw[] >>
+      drule boundP_mono >> rw[] >>
+      Cases_on `1 ≤ (SUC k)` >> rw[]
+      >- (first_x_assum drule >> rw[] >> metis_tac[boundP_substP])
+      >> fs[NOT_GREATER])
+  (* appT *)
+  >- (first_x_assum drule >> rw[] >>
+      rw[Once substPl] >>
+      `substP (substPl (appT P) (SUC k) W') k Q =
+       appT (substP (substPl P (SUC k) W') k Q)`
+        suffices_by simp[] >>
+      rw[Once substPl] >> rw[Once substP])
+  (* lamT *)
+  >> first_x_assum drule >> rw[] >>
+  rw[Once substPl] >>
+  `substP (substPl (lamT P P') (SUC k) W') k Q =
+   lamT (substP (substPl P (SUC (SUC k)) W') (SUC k) Q)
+   (substP (substPl P' (SUC k) W') k Q)`
+    suffices_by simp[] >>
+  rw[Once substPl] >> rw[Once substP]
 QED
+
+Theorem substP_boundP:
+
 
 (*
 
-
-Lemma substPl_cons P Q k W:
-  Forall (<P 1) W -> substPl P k (Q::W) = substP (substPl P (S k) W) k Q.
-Proof.
-  intros cl. induction P in k|-*;cbn.
-  -reflexivity.
-  -decide (k>n);[|decide (k=n)].
-   all:decide (S k > n);try omega;cbn.
-   1,2:decide (n=k);try omega.
-   +now rewrite IHP.
-   +subst k. rewrite minus_diag. cbn. now rewrite IHP.
-   +destruct n. 1:omega. rewrite <- minus_Sn_m with (m:=k). 2:omega. cbn.
-    destruct nth_error eqn:eq.
-    *cbn. erewrite boundP_substP. now rewrite IHP. eapply boundP_mono. eapply Forall_forall with (1:=cl).
-     now eauto using nth_error_In. omega.
-    *unfold substP;fold substP. decide _. omega. now rewrite IHP.
-  -now rewrite IHP.
-  -now rewrite IHP1,IHP2.
-Qed.
 Lemma substP_boundP P k W:
   Forall (<P 1) W -> P <P k + length W -> substPl P k W <P k.
 Proof.
