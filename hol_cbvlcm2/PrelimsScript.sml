@@ -100,6 +100,37 @@ Proof
 	Induct_on `n` >> Induct_on `H` >> rw[nth_error]
 QED
 
+Theorem nth_error_NONE_lt:
+	∀n H. nth_error n H = NONE ⇒ LENGTH H ≤ n
+Proof
+	Induct_on `n` >> Induct_on `H` >> rw[nth_error]
+QED
+
+Theorem nth_error_lt_NONE:
+	∀n H. LENGTH H ≤ n ⇒ nth_error n H = NONE
+Proof
+	Induct_on `n` >> rw[nth_error, EL, ADD1] >>
+    Induct_on `H` >> rw[nth_error, EL, ADD1] >>
+    first_x_assum drule >> rw[] >> metis_tac[nth_error, EL, ADD1]
+QED
+
+Theorem nth_error_SOME_lemma:
+	∀n H h t x.
+		nth_error n (h::t) = SOME x ⇒
+		1 <= n ⇒
+		nth_error (n-1) t = SOME x
+Proof
+	Induct_on `n` >> rw[nth_error, EL, ADD1] >>
+    Induct_on `H` >> rw[nth_error, EL, ADD1] >>
+    first_x_assum drule >> rw[] >> metis_tac[nth_error, EL, ADD1]
+QED
+
+Theorem nth_error_SOME_in_H:
+	∀n H x. nth_error n H = SOME x ⇒ MEM x H
+Proof
+	Induct_on `n` >> Induct_on `H` >> rw[nth_error]
+QED
+
 (* https://coq.inria.fr/library/Coq.Lists.List.html#Forall *)
 
 Inductive Forall:
