@@ -139,22 +139,63 @@ Proof
   rw[Once substPl] >> rw[Once substP]
 QED
 
+(* Fact 29.5 *)
 Theorem substP_boundP:
+  ∀P k W.
+    Forall (λx. boundP x 1) W ⇒
+    boundP P (k + LENGTH W) ⇒
+    boundP (substPl P k W) k
+Proof
+  Induct_on `P` >> rw[]
+  >- (rw[Once substPl] >> fs[Once boundP_cases])
+  >- (first_x_assum drule >> rw[] >>
+      qpat_x_assum `boundP (varT n P) (k + LENGTH W')` mp_tac >>
+      rw[Once boundP_cases] >>
+      first_x_assum drule >> rw[] >>
+      rw[Once substPl]
+      >- rw[Once boundP_cases]
+      >> fs[NOT_GREATER] >>
+      `n - k < LENGTH W'` by fs[] >>
+      Cases_on `nth_error (n − k) W'`
+      >- (drule nth_error_lt_Some >> rw[])
+      >> rw[] >> rw[Once boundP_cases] >>
+      drule nth_error_SOME_in_H >> rw[] >>
+      drule_all Forall_MEM >> rw[] >>
+      drule boundP_mono >> rw[])
+  >- (first_x_assum drule >> rw[] >>
+      qpat_x_assum `boundP (appT P) (k + LENGTH W')` mp_tac >>
+      rw[Once boundP_cases] >>
+      first_x_assum drule >> rw[] >>
+      rw[Once substPl] >> rw[Once boundP_cases])
+  >> first_x_assum drule >> rw[] >>
+  first_x_assum drule >> rw[] >>
+  qpat_x_assum `boundP (lamT P P') (k + LENGTH W')` mp_tac >>
+  rw[Once boundP_cases] >>
+  first_x_assum drule >> rw[] >>
+  rw[Once substPl] >> rw[Once boundP_cases] >>
+  fs[ADD1]
+QED
 
+(*
+Definition deltaC:
+  deltaC k (e: Clo) =
+    case e of
+      closC C E => substPl C k (MAP (deltaC 1) E)
+Termination
+
+End
+*)
+
+(*
+Definition deltaC:
+  deltaC k (e: Clo) =
+    (let (C, E) = e in
+    substPl C k (MAP (deltaC 1) E))
+End
+*)
 
 (*
 
-Lemma substP_boundP P k W:
-  Forall (<P 1) W -> P <P k + length W -> substPl P k W <P k.
-Proof.
-  induction P in k |-*. all:cbn;intros cl bnd;inv bnd.
-  -constructor.
-  -decide _.
-   +constructor. all:eauto.
-   +edestruct nth_error_lt_Some as (?&eq);[|rewrite eq]. omega. constructor. 2:eauto. eapply boundP_mono. eapply Forall_forall with (1:=cl). now eauto using nth_error_In. omega.
-  -constructor. eauto.
-  -constructor. all:eauto.
-Qed.
 Notation "P / E" := (closC P E).
 
 Fixpoint δC k (e:Clo) :=
