@@ -7,9 +7,9 @@ open LTheory;
 open RefinementsTheory;
 open ProgramsTheory;
 
-val _ = new_theory "Mstack";
+val _ = new_theory "M_stack";
 
-Type States = ``:(Pro list) # (Pro list)``;
+Type stateS = ``:(Pro list) # (Pro list)``;
 
 (* Reserved Notation "σ ≻S_ l σ'" (at level 70, l at level 0,format "σ '≻S_' l σ'"). *)
 
