@@ -178,154 +178,18 @@ Termination
   >> first_x_assum drule >> rw[]
 End
 
-(*
-Definition deltaC:
-  deltaC k (e: Clo) =
-    (let (C, E) = e in
-    substPl C k (MAP (deltaC 1) E))
-End
-*)
-
-(*
-Notation "P / E" := (closC P E).
-
-Fixpoint δC k (e:Clo) :=
-  let (C,E):=e in
-  substPl C k (map (δC 1) E).
-*)
-
 (* Reserved Notation "P <C k" (at level 70). *)
 Inductive boundC:
   ∀k P E. boundP P (k+LENGTH E) ∧ (∀e. MEM e E ⇒ boundC e 1) ⇒ boundC (closC P E) k
 End
 
-Theorem translateC_boundP_1:
-  ∀e. boundC e 1 ⇒ boundP (deltaC 1 e) 1
-Proof
-  Induct >> rw[] >>
-  rw[Once deltaC] >>
-  irule substP_boundP >> rw[]
-  >- (fs[Once boundC_cases] >>
-      `∀y. MEM y (MAP (λa. deltaC 1 a) l) ⇒ (λx. boundP x 1) y`
-        suffices_by rw[Forall_forall] >> rw[] >>
-      `∃z. y = (λa. deltaC 1 a) z ∧ MEM z l`
-        by metis_tac[MEM_MAP] >>
-      first_x_assum drule >> rw[] >> )
-  >> fs[Once boundC_cases]
-
-  fs[Once boundC_cases] >> rw[] >>
-  pop_assum mp_tac >> pop_assum mp_tac >>
-  Induct_on `boundP` >> rw[]
-  >- rw[Once deltaC, Once substPl, Once boundP_cases]
-  >- (first_x_assum drule >> rw[] >>
-      fs[Once deltaC] >> rw[Once substPl]
-      >- rw[Once boundP_cases]
-      >> fs[NOT_GREATER] >>
-      Cases_on `nth_error (n − 1) (MAP (λa. deltaC 1 a) E)` >> rw[]
-      >- (drule nth_error_NONE_lt >> rw[])
-      >> rw[Once boundP_cases] >>
-      drule nth_error_SOME_in_H >> rw[] >>
-      fs[MEM_MAP] >> rw[] >>
-
-    rw[Once deltaC, Once substPl, Once boundP_cases])
-
-  Induct >> rw[] >> pop_assum mp_tac >>
-  MAP_EVERY qid_spec_tac [`l`, `P`] >>
-  Induct_on `l` >> rw[]
-  >- (rw[Once deltaC, substPl_nil] >> fs[Once boundC_cases])
-  >> fs[Once boundC_cases] >> rw[Once deltaC] >>
-  rw[Once deltaC] >> Cases_on `h` >> rw[] >>
-
-  pop_assum mp_tac >>
-
-  rw[Once deltaC] >>
-
-  Induct >> rw[] >>
-  pop_assum mp_tac >>
-  MAP_EVERY qid_spec_tac [`l`, `P`] >>
-  Induct_on `l` >> rw[]
-  >- (rw[Once deltaC, substPl_nil] >> fs[Once boundC_cases])
-  >> rw[Once deltaC] >>
-  irule substP_boundP >> rw[]
-  >- (fs[Once boundC_cases] >>
-      `∀y. MEM y (MAP (λa. deltaC 1 a) l) ⇒ (λx. boundP x 1) y`
-        suffices_by rw[Forall_forall] >> rw[] >>
-      `∃z. y = (λa. deltaC 1 a) z ∧ MEM z l`
-        by metis_tac[MEM_MAP] >>
-      first_x_assum drule >> rw[] >>)
-  >> fs[Once boundC_cases]
-
-
-
-QED
-
 Theorem translateC_boundP:
   ∀e k. boundC e k ⇒ boundP (deltaC k e) k
 Proof
-  Induct_on `e`
-  Cases_on `k` >> rw[]
-  >- (fs[Once boundC_cases] >> rw[Once deltaC] >>
-
-      )
-  >>
-  Induct >> rw[] >>
-  fs[Once boundC_cases] >>
-  rw[Once deltaC] >>
-  irule substP_boundP >> rw[] >>
-  `∀y. MEM y (MAP (λa. deltaC 1 a) l) ⇒ (λx. boundP x 1) y`
-    suffices_by rw[Forall_forall] >> rw[] >>
-  `∃z. y = (λa. deltaC 1 a) z ∧ MEM z l`
-    by metis_tac[MEM_MAP] >> rw[] >>
-  first_x_assum drule >> rw[] >>
-  fs[Once boundC_cases] >> rw[] >>
-  rw[Once deltaC] >>
-  rw[Once substPl] >> Cases_on `P'` >> rw[]
-  >- rw[Once boundP_cases]
-  >- (rw[Once boundP_cases] >> )
-
-  rw[Once deltaC] >> Cases_on `z` >> rw[] >>
-  first_assum drule >>
-  `boundP `
-  simp[Once boundC_cases]
-  strip_tac >>
-
-first_x_assum drule >> rw[] >>
-  boundP_substP
-  pop_assum mp_tac >> rw[Once boundC_cases] >>
-
-  rw[Once deltaC] >> Cases_on `z` >> rw[] >>
-
-
-
-
-
-  rw[] >> first_x_assum drule >> rw[] >>
-  rw[Once deltaC] >> Cases_on `z` >> rw[] >>
-  rw[Once boundP_cases]
-  `Forall (λx. boundP x 1) (MAP (λa. deltaC 1 a) l)`
-    by (Induct_on `l` >> rw[]
-        >- rw[Once Forall_cases]
-        >> )
-  rw[Once substPl] >>
-  fs[Once boundC_cases] >>
-  drule boundP_substP >> rw[] >>
-
-  rw[Once boundP_cases]
-
-  LENGTH_MAP
-  Forall_forall
-  MEM_MAP
+  Induct_on `boundC` >>
+  rw[] >> rw[Once deltaC] >>
+  irule substP_boundP >> rw[Forall_forall,MEM_MAP] >>
+  res_tac
 QED
-
-(*
-
-Lemma translateC_boundP e k:
-  e <C k -> δC k e <P k.
-Proof.
-  induction 1. cbn.
-  apply substP_boundP. 2: now rewrite map_length. eapply Forall_forall.
-  setoid_rewrite in_map_iff. intros ? (?&<-&?). eauto.
-Qed.
-*)
 
 val _ = export_theory ()
