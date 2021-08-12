@@ -1,6 +1,7 @@
 open HolKernel Parse boolLib bossLib;
 open arithmeticTheory;
 open listTheory;
+open relationTheory;
 open PrelimsTheory;
 open RefinementsTheory;
 open LTheory;
@@ -21,9 +22,9 @@ Type stateC = ``:Clo list # Clo list``;
 	Reserved Notation "σ ≻C_ l σ'" (at level 70, l at level 0,format "σ '≻C_' l σ'").
 *)
 Inductive stepC:
-	(∀E T V. stepC τ (closC retT E::T,V) (T,V)) ∧
+	(∀E T V. stepC (τ: label) (closC retT E::T,V) (T,V)) ∧
 	(∀P E x V p T.
-    	nth_error x E = Some p ⇒
+    	nth_error x E = SOME p ⇒
     	stepC τ (closC (varT x P) E::T,V) (closC P E::T,p::V)) ∧
 	(∀P Q E T V.
     	stepC τ (closC (lamT Q P) E ::T,V) (closC P E::T,closC Q E::V)) ∧
@@ -55,35 +56,58 @@ Definition repsCS:
 End
 
 (*
-
-Definition repsCS (π:stateC) (σ:stateS) : Prop :=
-  let '(T,V):= π in closedSC (T,V) /\ (map (δC 0) T,map (δC 1) V) = σ.
 Notation "(≫CS)" := (repsCS) (at level 0).
 Notation "π ≫CS σ" := (repsCS π σ) (at level 70).
+*)
 
-Lemma repsCS_functional :
-  functional (≫CS).
-Proof.
-  intros [] ? ? [? <-] [? <-]. tauto.
-Qed.
-Local Lemma cbound_cons P e E :
-  P/E <C 1 -> e <C 1 -> P/(e::E) <C 0.
-Proof.
-  inversion 1. constructor;cbn;intuition (subst;eauto).
-Qed.
-Lemma reducibility T V:
-  reducible (≻S) (map (δC 0) T,map (δC 1) V) -> reducible (≻C) (T,V).
-Proof.
-  intros (σ'&l'&R). unfold reducible.
-  destruct T as [|[[] E]];cbn in R.
-  -now inv R.
-  -eauto.
-  -cbn in R. destruct _ eqn:eq. 2:now inv R.
-   rewrite <-minus_n_O in eq. apply nth_error_map in eq as (?&?&?). eauto.
-  -destruct V as [|? [|[]]]. 3:eauto.
-   all:cbn in R. all:inv R.
-  -eauto.
-Qed.
+(* Fact 31 *)
+Theorem repsCS_functional:
+  functional repsCS
+Proof
+  rw[functional, repsCS] >>
+  Cases_on `x` >> fs[]
+QED
+
+Theorem cbound_cons:
+  ∀P e E.
+    boundC (closC P E) 1 ⇒
+    boundC e 1 ⇒
+    boundC (closC P (e::E)) 0
+Proof
+  rw[Once boundC_cases] >> rw[Once boundC_cases]
+  >- rw[ADD1]
+  >- rw[]
+  >> metis_tac[]
+QED
+
+(* Fact 32 *)
+Theorem reducibility:
+  ∀Ts V.
+    reducible (any stepS) (MAP (deltaC 0) Ts, MAP (deltaC 1) V) ⇒
+    reducible (any stepC) (Ts, V)
+Proof
+  rw[reducible, any, Once stepS_cases, Once stepC_cases]
+  >- (Cases_on `Ts` >> fs[] >>
+      Cases_on `V` >> fs[] >>
+      Cases_on `t'` >> fs[] >>
+      gvs[] >> Cases_on `h` >> fs[Once deltaC] >>
+      fs[Once substPl] >>
+      Cases_on `P'` >> fs[]
+      >- (Cases_on `nth_error n (MAP (λa. deltaC 1 a) l)` >> fs[])
+      >> fs[Once substPl] >>
+      Cases_on `P0` >> fs[] >> rw[] >> Cases_on `h''` >> rw[])
+  >- (Cases_on `Ts` >> gvs[Once deltaC] >>
+      Cases_on `h` >> fs[Once substPl] >>
+      Cases_on `P'` >> fs[] >>
+      Cases_on `nth_error n (MAP (λa. deltaC 1 a) l)` >> fs[] >>
+      gvs[] >> metis_tac[nth_error_Some_lt, nth_error_lt_Some, LENGTH_MAP])
+  >> Cases_on `Ts` >> gvs[Once deltaC] >>
+  Cases_on `h` >> gvs[Once substPl] >>
+  Cases_on `P` >> fs[] >>
+  Cases_on `nth_error n (MAP (λa. deltaC 1 a) l)` >> fs[]
+QED
+
+(*
 Ltac inv_closed_clos :=
   repeat
     match goal with
@@ -94,52 +118,145 @@ Ltac inv_closed_clos :=
     | [H:varT _ _<P _ |- _] => inv H
     | [H:appT _<P _ |- _] => inv H
     end.
+*)
 
-Lemma closedSC_preserved T V T' V' :
-  closedSC (T,V) -> (T,V) ≻C (T',V') -> closedSC (T',V').
-Proof.
-  intros ? [l R]. inv R.
-  all:inv_closed_clos.
-  all:split;repeat apply Forall_cons.
-  all:eauto using nth_error_In, cbound_cons.
-Qed.
-Lemma tau_simulation T V T' V':
-  (T,V) ≻C_τ (T',V') -> (map (δC 0) T,map (δC 1) V) ≻S_τ (map (δC 0) T',map (δC 1) V').
-Proof.
-  intros H. inv H. all:cbn.
-  2:erewrite <-minus_n_O, map_nth_error.
-  all:eauto.
-Qed.
-Lemma beta_simulation T V T' V':
-  closedSC (T,V) -> (T,V) ≻C_β (T',V') -> (map (δC 0) T,map (δC 1) V) ≻S_β (map (δC 0) T',map (δC 1) V').
-Proof.
-  intros cs H. inv H. cbn.
-  rewrite substPl_cons.
-  -constructor.
-  -inv_closed_clos. eapply Forall_map,Forall_forall. auto using translateC_boundP.
-Qed.
-Lemma clos_stack_refinement :
-  refinement_M (≫CS).
-Proof.
-  split;cbn.
-  -intros [] [] [? [= <- <-]]. apply reducibility.
-  -split.
-   all:unfold repsCS.
-   all:intros [T V] [T' V'] [T0 V0] [cs [= <- <-]] ?.
-   all:specialize closedSC_preserved with (1:=cs) as ?.
-   all:eauto 20 using tau_simulation,beta_simulation.
-Qed.
-Lemma compile_clos_stack P:
-  closedP P ->
-  ([P/[]],[]) ≫CS ([P],[]).
-Proof.
-  intros cs. split.
-  -unfold closedSC. eauto.
-  -cbn. now rewrite substPl_nil.
-Qed.
-Definition repsCL:= rcomp repsCS repsSL.
+(* Fact 33 *)
+Theorem closedSC_preserved:
+  ∀Ts V T' V'.
+    closedSC (Ts, V) ⇒
+    (any stepC (Ts, V) (T', V')) ⇒
+    closedSC (T', V')
+Proof
+  rw[closedSC, any]
+  >- (fs[Once stepC_cases] >> gvs[]
+      >- fs[Once Forall_cases]
+      >- (fs[Once Forall_cases] >> fs[Once boundC_cases] >>
+          fs[Once boundP_cases])
+      >- (fs[Once Forall_cases] >> fs[Once boundC_cases] >>
+          fs[Once boundP_cases])
+      >> fs[Once Forall_cases] >> rw[]
+      >- (pop_assum mp_tac >> rw[Once Forall_cases] >>
+          metis_tac[cbound_cons])
+      >> rw[Once Forall_cases] >>
+      fs[Once boundC_cases] >> fs[Once boundP_cases])
+  >> fs[Once stepC_cases] >> gvs[]
+  >- (fs[Once Forall_cases] >> rw[]
+      >- (qpat_x_assum `boundC _ _` mp_tac >> rw[Once boundC_cases] >>
+          metis_tac[nth_error_SOME_in_H])
+      >- rw[Once Forall_cases]
+      >- (qpat_x_assum `boundC (closC (varT x P) E) 0` mp_tac >> rw[Once boundC_cases] >>
+          metis_tac[nth_error_SOME_in_H])
+      >> rw[Once Forall_cases])
+  >- (fs[Once Forall_cases] >> rw[]
+      >- (fs[Once boundC_cases] >> fs[Once boundP_cases] >> gvs[] >>
+          Cases_on `Q` >> rw[]
+          >- fs[Once boundP_cases]
+          >- (qpat_x_assum `boundP (varT n P0) (SUC (LENGTH E))` mp_tac >>
+              rw[Once boundP_cases, ADD1])
+          >- (qpat_x_assum `boundP (appT P0) (SUC (LENGTH E))` mp_tac >>
+              rw[Once boundP_cases, ADD1])
+          >> qpat_x_assum `boundP (lamT P0 P1) (SUC (LENGTH E))` mp_tac >>
+          rw[Once boundP_cases, ADD1])
+      >- rw[Once Forall_cases]
+      >- (qpat_x_assum `boundC (closC (lamT Q P) E) 0` mp_tac >> rw[Once boundC_cases] >>
+          rw[Once boundC_cases] >> fs[Once boundP_cases] >>
+          Cases_on `Q` >> rw[]
+          >- fs[Once boundP_cases]
+          >- (qpat_x_assum `boundP (varT n P0) (SUC (LENGTH E))` mp_tac >>
+              rw[Once boundP_cases, ADD1])
+          >- (qpat_x_assum `boundP (appT P0) (SUC (LENGTH E))` mp_tac >>
+              rw[Once boundP_cases, ADD1])
+          >> qpat_x_assum `boundP (lamT P0 P1) (SUC (LENGTH E))` mp_tac >>
+          rw[Once boundP_cases, ADD1])
+      >> rw[Once Forall_cases])
+  >> pop_assum mp_tac >> simp[Once Forall_cases] >> rw[Once Forall_cases]
+QED
+
+(* Fact 34 *)
+Theorem tau_simulation:
+  ∀Ts V T' V'.
+    stepC τ (Ts, V) (T', V') ⇒
+    stepS τ (MAP (deltaC 0) Ts, MAP (deltaC 1) V) (MAP (deltaC 0) T', MAP (deltaC 1) V')
+Proof
+  rw[Once stepC_cases, Once stepS_cases] >> rw[]
+  >- rw[Once deltaC, Once substPl]
+  >- (rw[Once deltaC, Once substPl] >> rw[] >>
+      drule(INST_TYPE [beta |-> ``:Pro``] map_nth_error) >> rw[] >>
+      `nth_error x (MAP (λa. deltaC 1 a) E) = SOME ((λa. deltaC 1 a) p)`
+        by metis_tac[] >>
+      Cases_on `nth_error x (MAP (λa. deltaC 1 a) E)` >> rw[] >>
+      rw[EQ_SYM_EQ] >> rw[Once deltaC])
+  >> rw[Once deltaC, Once substPl] >> rw[]
+  >> rw[EQ_SYM_EQ] >> rw[Once deltaC]
+QED
+
+(* Fact 35 *)
+Theorem beta_simulation:
+  ∀Ts V T' V'.
+    closedSC (Ts, V) ⇒
+    stepC β (Ts, V) (T', V') ⇒
+    stepS β (MAP (deltaC 0) Ts, MAP (deltaC 1) V) (MAP (deltaC 0) T', MAP (deltaC 1) V')
+Proof
+  rw[closedSC, Once stepC_cases, Once stepS_cases] >> rw[]
+  >- (rw[Once deltaC, Once substPl] >>
+      rw[EQ_SYM_EQ] >> rw[Once deltaC])
+  >> rw[Once deltaC] >> rw[EQ_SYM_EQ, Once deltaC] >> rw[EQ_SYM_EQ] >>
+  `Forall (λx. boundP x 1) (MAP (λa. deltaC 1 a) F')`
+    suffices_by rw[substPl_cons, ADD1] >>
+  pop_assum mp_tac >> simp[Once Forall_cases] >> rw[Once Forall_cases] >>
+  qpat_x_assum `boundC (closC _ _) _` mp_tac >> rw[Once boundC_cases] >>
+  `Forall (λx. boundC x 1) F'` by fs[Forall_forall] >>
+  irule Forall_map >> rw[] >>
+  pop_assum mp_tac >> Induct_on `Forall`  >> rw[]
+  >- rw[Once Forall_cases]
+  >> rw[Once Forall_cases] >> metis_tac[translateC_boundP]
+QED
+
+(* Theorem 36: Closure Machine to Naive Stack Machine *)
+Theorem clos_stack_refinement:
+  refinement_M repsCS (stepC (τ:label)) (stepC β) (stepS τ) (stepS β)
+Proof
+  rw[refinement_M, repsCS] >> Cases_on `a` >> fs[]
+  >- (rename [`reducible (stepC τ ∪ᵣ stepC β) (Ts,V)`] >>
+      `reducible (any stepS) (MAP (deltaC 0) Ts,MAP (deltaC 1) V) ⇒
+       reducible (any stepC) (Ts,V)`
+        by rw[reducibility] >>
+      fs[reducible, any, RUNION] >> rw[] >>
+      rfs[PULL_EXISTS] >>
+      first_x_assum drule >> rw[] >>
+      fs[Once stepC_cases] >> rw[]
+      >- metis_tac[]
+      >- metis_tac[]
+      >- metis_tac[]
+      >> rw[Once stepC_cases])
+  >- (Cases_on `a'` >> fs[] >> rw[]
+      >- metis_tac[any, closedSC_preserved]
+      >> metis_tac[tau_simulation])
+  >> Cases_on `a'` >> fs[] >> rw[]
+  >- metis_tac[any, closedSC_preserved]
+  >> metis_tac[beta_simulation]
+QED
+
+Theorem compile_clos_stack:
+  ∀P.
+    closedP P ⇒
+    repsCS ([closC P []], []) ([P], [])
+Proof
+  rw[closedP, repsCS, closedSC] >> rw[Once Forall_cases]
+  >- rw[Once boundC_cases]
+  >- rw[Once Forall_cases]
+  >> rw[Once deltaC] >> metis_tac[substPl_nil]
+QED
+
+Definition repsCL:
+  repsCL = rcomp repsCS repsSL
+End
+
+(*
 Notation "(≫CL)" := (repsCL) (at level 0).
 Notation "π ≫CL s" := (repsCL π s) (at level 70).
+*)
+
 (*
 Lemma repsCL_equiv T V s:
   (T,V) ≫CL s <-> closedL s /\ exists A, δV (map (δC 1) V) = Some A /\ δT (map (δC 0) T) A = Some s.
@@ -149,20 +266,22 @@ Proof.
   -intros (?&(A&?&?)). eexists;split. split. 2:reflexivity. 2:now cbn;eauto. admit.
 Abort. *)
 
-Lemma clos_L_refinement :
-  refinement_ARS (≫CL).
-Proof.
-  apply (composition clos_stack_refinement stack_L_refinement).
-Qed.
-Lemma compile_clos_L s:
-  closedL s ->
-  ([γ s retT/[]],[]) ≫CL s.
-Proof.
-  intros ?. eexists;split.
-  -apply compile_clos_stack. eauto using bound_compile.
-  -apply compile_stack_L.
-Qed.
-Generated by coqdoc and improved with CoqdocJS
-*)
+(* Theorem 36: Closure Machine to L *)
+Theorem clos_L_refinement:
+  refinement_ARS repsCL (stepC (τ:label)) (stepC β) stepL
+Proof
+  rw[repsCL, rcomp] >>
+  metis_tac[composition, clos_stack_refinement, stack_L_refinement]
+QED
+
+Theorem compile_clos_L:
+  ∀s. closedL s ⇒ repsCL ([closC (gamma s retT) []], []) s
+Proof
+  rw[closedL, repsCL, rcomp] >>
+  qexists_tac `([gamma s retT],[])` >> rw[]
+  >- (irule compile_clos_stack >> rw[closedP] >>
+      irule bound_compile >> rw[Once boundP_cases])
+  >> metis_tac[compile_stack_L]
+QED
 
 val _ = export_theory ()
