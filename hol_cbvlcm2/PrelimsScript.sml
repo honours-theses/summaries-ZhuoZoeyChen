@@ -100,6 +100,12 @@ Proof
 	Induct_on `n` >> Induct_on `H` >> rw[nth_error]
 QED
 
+Theorem map_nth_error:
+	∀n H x f. nth_error n H = SOME x ⇒ nth_error n (MAP f H) = SOME (f x)
+Proof
+	Induct_on `n` >> Induct_on `H` >> rw[nth_error]
+QED
+
 Theorem nth_error_NONE_lt:
 	∀n H. nth_error n H = NONE ⇒ LENGTH H ≤ n
 Proof
@@ -144,6 +150,15 @@ Proof
 	ntac 4 strip_tac >> Induct_on `Forall` >> rw[Forall_rules]
 QED
 
+Theorem Forall_f1_imp_f2:
+	∀f1 f2 A.
+		Forall (λx. f1 x) A ⇒
+		(∀x. f1 x ⇒ f2 x) ⇒
+		Forall (λx. f2 x) A
+Proof
+	ntac 3 strip_tac >> Induct_on `Forall` >> rw[Forall_rules]
+QED
+
 Theorem Forall_forall:
     ∀P l. Forall P l ⇔ (∀x. MEM x l ⇒ P x)
 Proof
@@ -185,7 +200,7 @@ Definition rcomp X Y Z (R : X -> Y -> Prop) (S : Y -> Z -> Prop) : X -> Z -> Pro
 *)
 
 Definition rcomp:
-	rcomp x z R S = ∃y. R x y ∧ S y z
+	rcomp R S = (λx z. ∃y. R x y ∧ S y z)
 End
 
 (*
