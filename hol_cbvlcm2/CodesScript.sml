@@ -69,7 +69,8 @@ Inductive representsPro:
 		representsPro C p (varT x P)) ∧
 [~Lam:]
 	(∀p q P Q.
-		codeImpl.phi C p = SOME (lamC q) ∧ representsPro C (codeImpl.inc p) P ∧ representsPro C q Q ⇒
+		codeImpl.phi C p = SOME (lamC q) ∧ representsPro C (codeImpl.inc p) P ∧
+		representsPro C q Q ⇒
 		representsPro C p (lamT Q P)) ∧
 [~App:]
 	(∀p P.
@@ -142,41 +143,63 @@ End
 Theorem fetch_correct':
 	∀C1 C2 P. representsPro (C1++(psi P)++C2) (LENGTH C1) P
 Proof
-	Induct_on ``
+	Induct_on `P`
+	>- (rw[Once representsPro_cases, codeImpl, AllCaseEqs()] >>
+		`LENGTH C1 ≤ LENGTH C1` by rw[LESS_EQ_REFL] >>
+		drule nth_error_app2 >> rw[] >>
+		`nth_error (LENGTH C1) (C1 ⧺ (psi retT ⧺ C2)) = nth_error 0 (psi retT ⧺ C2)`
+			by fs[] >> fs[APPEND_ASSOC] >> rw[nth_error, psi])
+	>- (rw[Once representsPro_cases, codeImpl, AllCaseEqs()]
+		>- (`LENGTH C1 ≤ LENGTH C1` by rw[LESS_EQ_REFL] >>
+			drule nth_error_app2 >> rw[] >>
+			`nth_error (LENGTH C1) (C1 ⧺ (psi (varT n P) ⧺ C2)) =
+			 nth_error 0 (psi (varT n P) ⧺ C2)` by fs[] >>
+			fs[APPEND_ASSOC] >> rw[nth_error, Once psi])
+		>> rw[Once psi] >>
+		`representsPro ((C1 ++ [varC n]) ⧺ psi P ⧺ C2) (LENGTH (C1 ++ [varC n])) P`
+			by fs[] >> fs[] >>
+		`C1 ⧺ [varC n] ⧺ psi P ⧺ C2 = C1 ⧺ varC n::psi P ⧺ C2`
+			suffices_by metis_tac[] >> rw[])
+	>- (rw[Once representsPro_cases, codeImpl, AllCaseEqs()]
+		>- (`LENGTH C1 ≤ LENGTH C1` by rw[LESS_EQ_REFL] >>
+			drule nth_error_app2 >> rw[] >>
+			`nth_error (LENGTH C1) (C1 ⧺ (psi (appT P) ⧺ C2)) =
+			 nth_error 0 (psi (appT P) ⧺ C2)` by fs[] >>
+			fs[APPEND_ASSOC] >> rw[nth_error, Once psi])
+		>> rw[Once psi] >>
+		`representsPro ((C1 ++ [appC]) ⧺ psi P ⧺ C2) (LENGTH (C1 ++ [appC])) P`
+			by fs[] >> fs[] >>
+		`C1 ⧺ [appC] ⧺ psi P ⧺ C2 = C1 ⧺ appC::psi P ⧺ C2`
+			suffices_by metis_tac[] >> rw[])
+	>> rw[Once representsPro_cases, codeImpl, AllCaseEqs()] >> rw[PULL_EXISTS] >>
+	qexists_tac `LENGTH (psi P') + 1` >> rw[] >> rw[Once psi]
+	>- (`LENGTH C1 ≤ LENGTH C1` by rw[LESS_EQ_REFL] >>
+		drule nth_error_app2 >> rw[] >>
+		`nth_error (LENGTH C1) (C1 ⧺ (lamC (LENGTH (psi P') + 1)::(psi P' ⧺ psi P) ⧺ C2)) =
+		 nth_error 0 (lamC (LENGTH (psi P') + 1)::(psi P' ⧺ psi P) ⧺ C2)`
+		 	by fs[] >> fs[APPEND_ASSOC] >>
+		rw[nth_error])
+	>- (`representsPro ((C1 ⧺ [lamC (LENGTH (psi P') + 1)]) ⧺ psi P' ⧺ (psi P ⧺ C2))
+					   (LENGTH (C1 ⧺ [lamC (LENGTH (psi P') + 1)]))
+					   P'` by fs[] >> fs[] >>
+		`C1 ⧺ [lamC (LENGTH (psi P') + 1)] ⧺ psi P' ⧺ psi P ⧺ C2 =
+		 C1 ⧺ lamC (LENGTH (psi P') + 1)::(psi P' ⧺ psi P) ⧺ C2`
+		 	suffices_by metis_tac[] >> rw[])
+	>> `representsPro ((C1 ⧺ lamC (LENGTH (psi P') + 1) :: psi P') ⧺ psi P ⧺ C2)
+					   (LENGTH (C1 ⧺ lamC (LENGTH (psi P') + 1) :: psi P'))
+					   P` by fs[] >> fs[ADD1] >>
+	`C1 ⧺ lamC (LENGTH (psi P') + 1)::psi P' ⧺ psi P ⧺ C2 =
+	 C1 ⧺ lamC (LENGTH (psi P') + 1)::(psi P' ⧺ psi P) ⧺ C2`
+	 	suffices_by metis_tac[] >> rw[]
 QED
 
-(*
-Lemma fetch_correct' C1 C2 P:
-  length C1 ≫p_(C1++ψ P++C2) P.
-Proof.
-  induction P in C1,C2|-*;cbn.
-  -econstructor; cbn. rewrite nth_error_app2. 2:omega. rewrite <- minus_n_n. reflexivity.
-  -econstructor;cbn.
-   +rewrite nth_error_app2. 2:omega. rewrite <- minus_n_n. reflexivity.
-   +specialize IHP with (C1:=C1++[varC n]) (C2:=C2). rewrite app_assoc_reverse in IHP.
-    autorewrite with list in IHP. exact IHP.
-  -econstructor;cbn.
-   +rewrite nth_error_app2. 2:omega. rewrite <- minus_n_n. reflexivity.
-   +specialize IHP with (C1:=C1++[appC]) (C2:=C2). rewrite app_assoc_reverse in IHP.
-    autorewrite with list in IHP. exact IHP.
-  -econstructor;cbn.
-   +rewrite nth_error_app2. 2:omega. rewrite <- minus_n_n. reflexivity.
-   +autorewrite with list.
-    cbn. specialize IHP2 with (C1:=C1++[lamC (1+ | ψ P2 |)])
-                              (C2:=ψ P1++C2).
-    rewrite app_assoc_reverse in IHP2.
-    autorewrite with list in IHP2. cbn in *. exact IHP2.
-   +specialize IHP1 with (C1:=C1++lamC (1+ |ψ P2|)
-                                :: ψ P2)
-                         (C2:=C2).
-    autorewrite with list in *. cbn in *. exact IHP1.
-Qed.
-Lemma fetch_correct P :
-  0 ≫p_(ψ P) P.
-Proof.
-  specialize fetch_correct' with (C1:=[]) (C2:=[]) (P:=P) as H.
-  cbn in H. setoid_rewrite app_nil_r in H. eassumption.
-Qed.
-*)
+Theorem fetch_correct:
+	∀P. representsPro (psi P) 0 P
+Proof
+	rw[] >>
+	`representsPro ([]++(psi P)++[]) (LENGTH ([]: Com list)) P`
+		by metis_tac[fetch_correct'] >>
+	fs[]
+QED
 
 val _ = export_theory ()
