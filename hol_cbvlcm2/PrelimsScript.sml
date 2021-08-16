@@ -137,6 +137,17 @@ Proof
 	Induct_on `n` >> Induct_on `H` >> rw[nth_error]
 QED
 
+
+Theorem nth_error_app2:
+	∀l l' n.
+		LENGTH l ≤ n ⇒
+    	nth_error n (l++l') = nth_error (n-LENGTH l) l'
+Proof
+	Induct_on `n` >> rw[nth_error, EL, ADD1] >>
+    Induct_on `l` >> rw[nth_error, EL, ADD1] >>
+    first_x_assum drule >> rw[] >> metis_tac[nth_error, EL, ADD1]
+QED
+
 (* https://coq.inria.fr/library/Coq.Lists.List.html#Forall *)
 
 Inductive Forall:
