@@ -30,6 +30,17 @@ Datatype:
     	|>
 End
 
+Definition codeImpl:
+	codeImpl =
+		<|	phi := (λC p.
+		      case (nth_error p C) of
+		      | SOME (lamC k) => SOME (lamC (p+k))
+		      | SOME c => SOME c
+		      | NONE => NONE);
+		    inc := (λp. p+1)
+		|>
+End
+
 (*
 Class code :=
   {
@@ -45,24 +56,24 @@ Notation "# p" := (inc p) (at level 0, format "'#' p").
 
 (* Reserved Notation "p ≫p_ C P" (at level 70,C at level 0, format "p '≫p_' C P"). *)
 
-(* code -> PA -> Pro -> Prop *)
-(* code -> num -> Pro -> Prop *)
+(* Code -> PA -> Pro -> Prop *)
+(* Code -> num -> Pro -> Prop *)
 Inductive representsPro:
 [~Ret:]
 	(∀p.
-		C.phi C.Code p = SOME retC ⇒
+		codeImpl.phi C p = SOME retC ⇒
 		representsPro C p retT) ∧
 [~Var:]
 	(∀p P x.
-		C.phi C.Code p = SOME (varC x) ∧ representsPro C (C.inc p) P ⇒
+		codeImpl.phi C p = SOME (varC x) ∧ representsPro C (codeImpl.inc p) P ⇒
 		representsPro C p (varT x P)) ∧
 [~Lam:]
 	(∀p q P Q.
-		C.phi C.Code p = SOME (lamC q) ∧ representsPro C (C.inc p) P ∧ representsPro C q Q ⇒
+		codeImpl.phi C p = SOME (lamC q) ∧ representsPro C (codeImpl.inc p) P ∧ representsPro C q Q ⇒
 		representsPro C p (lamT Q P)) ∧
 [~App:]
 	(∀p P.
-		C.phi C.Code p = SOME appC ∧ representsPro C (C.inc p) P ⇒
+		codeImpl.phi C p = SOME appC ∧ representsPro C (codeImpl.inc p) P ⇒
 		representsPro C p (appT P))
 End
 
@@ -90,15 +101,13 @@ QED
 (*
 Definition codeImpl:
 	codeImpl =
-		<|  PA := num;
-		    Code := Com list;
-		    φ C p:=
+		<|
+		    phi := (λC p.
 		      case (nth_error p C) of
 		      | SOME (lamC k) => SOME (lamC (p+k))
 		      | SOME c => SOME c
-		      | NONE => NONE
-		      end;
-		    inc p:= p+1
+		      | NONE => NONE);
+		    inc := (λp. p+1)
 		|>
 End
 *)
@@ -132,6 +141,9 @@ End
 
 Theorem fetch_correct':
 	∀C1 C2 P. representsPro (C1++(psi P)++C2) (LENGTH C1) P
+Proof
+	Induct_on ``
+QED
 
 (*
 Lemma fetch_correct' C1 C2 P:
