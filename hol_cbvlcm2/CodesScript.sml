@@ -8,6 +8,10 @@ val _ = new_theory "Codes";
     	   Codes
    --------------------- *)
 
+Datatype:
+  Com = retC | varC num | appC | lamC num
+End
+
 (*
 
 Inductive Com PA:= retC| varC (n:nat) | appC | lamC (p:PA).
@@ -15,7 +19,18 @@ Arguments retC {_}.
 Arguments varC {_} _.
 Arguments lamC {_} _.
 Arguments appC {_}.
+*)
 
+Datatype:
+	code =
+		<| Code : Com list;
+		   PA   : num;
+    	   phi  : Com list -> num -> Com option;
+    	   inc  : num -> num
+    	|>
+End
+
+(*
 Class code :=
   {
     Code:Type;
@@ -26,9 +41,32 @@ Class code :=
 
 Coercion φ : Code >-> Funclass.
 Notation "# p" := (inc p) (at level 0, format "'#' p").
+*)
 
-Reserved Notation "p ≫p_ C P" (at level 70,C at level 0, format "p '≫p_' C P").
+(* Reserved Notation "p ≫p_ C P" (at level 70,C at level 0, format "p '≫p_' C P"). *)
 
+(* code -> PA -> Pro -> Prop *)
+(* code -> num -> Pro -> Prop *)
+Inductive representsPro:
+[~Ret:]
+	(∀p.
+		C.phi C.Code p = SOME retC ⇒
+		representsPro C p retT) ∧
+[~Var:]
+	(∀p P x.
+		C.phi C.Code p = SOME (varC x) ∧ representsPro C (C.inc p) P ⇒
+		representsPro C p (varT x P)) ∧
+[~Lam:]
+	(∀p q P Q.
+		C.phi C.Code p = SOME (lamC q) ∧ representsPro C (C.inc p) P ∧ representsPro C q Q ⇒
+		representsPro C p (lamT Q P)) ∧
+[~App:]
+	(∀p P.
+		C.phi C.Code p = SOME appC ∧ representsPro C (C.inc p) P ⇒
+		representsPro C p (appT P))
+End
+
+(*
 Inductive representsPro {codeImpl : code} (C:Code) : PA -> Pro -> Prop :=
 | representsProRet p:
     C p = Some retC -> p ≫p_C retT
@@ -39,12 +77,33 @@ Inductive representsPro {codeImpl : code} (C:Code) : PA -> Pro -> Prop :=
 | representsProApp p P:
     C p = Some appC -> #p ≫p_C P -> p ≫p_C appT P
 where "p ≫p_ C P" := (representsPro C p P).
+*)
 
-Lemma representsPro_functional {codeImpl: code} (C:Code):
-  functional (representsPro C).
-Proof.
-  intros p P P' H. induction H in P'|-*; inversion 1;try congruence;f_equal;eauto;try congruence. replace q0 with q in * by congruence. eauto.
-Qed.
+Theorem representsPro_functional:
+	functional (representsPro C)
+Proof
+	simp[functional] >> Induct_on `representsPro` >> rw[] (* 4 *)
+	>- (fs[Once representsPro_cases] >> fs[])
+    >> pop_assum mp_tac >> rw[Once representsPro_cases]
+QED
+
+(*
+Definition codeImpl:
+	codeImpl =
+		<|  PA := num;
+		    Code := Com list;
+		    φ C p:=
+		      case (nth_error p C) of
+		      | SOME (lamC k) => SOME (lamC (p+k))
+		      | SOME c => SOME c
+		      | NONE => NONE
+		      end;
+		    inc p:= p+1
+		|>
+End
+*)
+
+(*
 Instance codeImpl: code:=
   {
     PA := nat;
@@ -57,17 +116,24 @@ Instance codeImpl: code:=
       end;
     inc p:= p+1
   }.
+*)
 
-Fixpoint ψ (P:Pro) : list (Com nat) :=
-    match P with
-    | retT => [retC]
-    | appT P => appC::ψ P
-    | varT x P => varC x::ψ P
-    | lamT Q P =>
-      let cP := ψ P in
-      lamC (1 + length cP)::cP++ψ Q
-    end.
+(* (P:Pro) : list (Com nat) :=*)
+Definition psi:
+	psi P =
+	    case P of
+	    | retT => [retC]
+	    | appT P => appC::psi P
+	    | varT x P => varC x::psi P
+	    | lamT Q P =>
+		      let cP = psi P in
+		      lamC (1 + LENGTH cP)::cP++psi Q
+End
 
+Theorem fetch_correct':
+	∀C1 C2 P. representsPro (C1++(psi P)++C2) (LENGTH C1) P
+
+(*
 Lemma fetch_correct' C1 C2 P:
   length C1 ≫p_(C1++ψ P++C2) P.
 Proof.
