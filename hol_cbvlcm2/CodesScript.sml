@@ -11,7 +11,7 @@ val _ = new_theory "Codes";
    --------------------- *)
 
 Datatype:
-  Com = retC | varC num | appC | lamC num
+  Com = retC | varC num | appC | lamC 'a
 End
 
 (*
@@ -23,14 +23,28 @@ Arguments lamC {_} _.
 Arguments appC {_}.
 *)
 
+(*
+Code : Com list;
+PA   : num;
+*)
+
 Datatype:
 	code =
-		<| Code : Com list;
-		   PA   : num;
+		<|
+    	   phi  : 'b -> 'a -> ('a Com) option;
+    	   inc  : 'a -> 'a
+    	|>
+End
+
+(*
+Datatype:
+	code =
+		<|
     	   phi  : Com list -> num -> Com option;
     	   inc  : num -> num
     	|>
 End
+*)
 
 Definition codeImpl:
 	codeImpl =
@@ -199,7 +213,7 @@ Theorem fetch_correct:
 	∀P. representsPro (psi P) 0 P
 Proof
 	rw[] >>
-	`representsPro ([]++(psi P)++[]) (LENGTH ([]: Com list)) P`
+	`representsPro ([]++(psi P)++[]) (LENGTH ([]: num Com list)) P`
 		by metis_tac[fetch_correct'] >>
 	fs[]
 QED
