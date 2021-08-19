@@ -1,0 +1,378 @@
+\documentclass[12pt]{article}
+\linespread{1.25}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib}
+\usepackage{bibentry}
+\usepackage{sectsty}
+\usepackage[autostyle]{csquotes} 
+\nobibliography*
+
+
+\title{A Verified Cost Model for $\lambda$-Calculus}
+\author{Zhuo Chen (z5155600)\\
+[0.5cm]University of New South Wales\\ 
+School of Computer Science and Engineering}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{center}
+{\small Supervisors: Christine Rizkallah, 
+Johannes Åman Pohjola, and Carroll Morgan} \\ 
+{\small GSOE 9400 (Engineering Postgraduate Research Essentials)}
+\end{center}
+
+\newpage 
+
+\pagenumbering{roman} 
+
+\begin{abstract}
+        Developing an effective cost model for $\lambda$-calculus has always been an important topic 
+        in the research of computer science as $\lambda$-calculus is one of the fundamental models of 
+        computation and provides a foundation for both computability and functional programming. 
+
+        There has been ongoing research in developing cost models for $\lambda$-calculus with different evaluation strategies
+        and this project aims to extend this line of work by providing a new effective 
+        verified cost model for call-by-value $\lambda$-calculus using HOL.
+\end{abstract}
+
+\newpage 
+
+\tableofcontents
+
+\newpage 
+
+\pagenumbering{arabic} 
+
+\section{Introduction}
+
+The $\lambda$-calculus~\cite{DBLP:series/hhl/CardoneH09} is a fundamental model of computation that represents
+ functions using applications and abstractions over variables. 
+It provides a foundation for computability and functional programming. 
+Unlike programs written in an imperative style, functional programs do not specify
+ low-level details describing \emph{how} they should run on a computer. Instead, 
+  functional languages provide a convenient way of describing \emph{what} functions 
+  should compute \emph{to} in a concise mathematical manner. This abstract representation is ideal for proving 
+  that a program is correct against its specification. 
+  This answers the following important question: Does my program correctly compute the result that it is supposed to?
+  Other than functional correctness, another property that is of high interest to us computer scientists 
+  is run-time computational complexity. 
+  Computational complexity addresses the vital questions: How fast does my program produce an output?
+   
+  For algorithms, there are classic cost models such as big-O 
+  notation that significantly ease the process of analysing computational complexity.
+   Creating effective cost models for functional programming languages 
+   is a significant challenge and there has been a large body of research
+    dedicated to solving this task over the years.
+   
+  Functional programming languages are associated with evaluation strategies 
+  that describe how programs written in these languages evaluate function-calls, specifying the order
+   in which these function-calls are evaluated. 
+   Examples of such strategies include call-by-value, 
+   the strategy used by the ML programming language~\cite{DBLP:books/daglib/0069232}, 
+   and call-by-need, 
+   the strategy used by Haskell~\cite{DBLP:conf/hopl/HudakHJW07}. These evaluation strategies affect the 
+   run-time efficiency of the functional programs. 
+    
+Over the years, there has been ongoing research~\cite{DBLP:journals/entcs/Accattoli18, DBLP:conf/popl/MoranS99,DBLP:journals/pacmpl/HackettH19} 
+in developing cost models for $\lambda$-calculus with different evaluation strategies.
+This work provides a solid theoretical basis for creating a useful cost model 
+for functional programming. 
+
+This project aims to extend this line of work by providing a new effective 
+verified cost model for call-by-value $\lambda$-calculus. 
+The verification will be done in the interactive theorem prover (ITP), HOL~\cite{DBLP:conf/tphol/SlindN08},
+a software tool which assists human-computer collaborated proofs. 
+
+\newpage 
+
+\section{Literature Review}
+    \subsection{Interactive Theorem Prover}
+
+Traditionally, computer scientists carry out the computability proofs including $\lambda$-calculus 
+related definitions and proofs in a pen-and-paper style. 
+However, pen-and-paper proofs tend to be error-prone, especially when the proof gets longer and more complicated.
+Software tools known as theorem provers then comes in handy. 
+They provide proof environments which allows machines to check and validate the 
+given proofs (or even generate the proofs in some cases).
+There are two kinds of theorem provers: interactive and automated. 
+Automated theorem provers are able to carry out proofs for given theorems without any human input, however,
+they are not capable of proving relatively sophisticated theorems that require long chains of reasoning involving the 
+statement of many intermediate lemmas.
+Interactive theorem provers are also known as proof assistants, named after how they 
+work: carrying out proofs by human-computer collaboration. 
+More specifically, interactive theorem provers allow users to encode their mathematical/logical goals
+and then to prove them, while having their steps checked by the machine. 
+In the case of our project with $\lambda$-calculus, interactive theorem provers 
+allow us to describe the syntax and semantics of $\lambda$-calculus with specific evaluation strategies,
+and to define and verify the cost model we develop for this specific $\lambda$-calculus. 
+There exists many different interactive theorem provers, such as Coq~\citep{coq} 
+, Isabelle/HOL~\citep{DBLP:books/sp/NipkowPW02, DBLP:books/sp/NipkowK14} and 
+the one we are proposing to use in our project, HOL~\citep{DBLP:conf/tphol/SlindN08}. 
+
+HOL is a theorem prover developed for interactive theorem proving in higher order logics
+(in particular, predicate calculus with terms from simple type theory). 
+HOL is interfaced to Standard ML (Standard Meta Language,~\cite{DBLP:books/daglib/0069232}), a general-purpose functional programming language 
+which is popular in the development of theorem provers. 
+This interface allows users to denote the terms and theories of the logic,
+express and apply the proof strategies, and develop logical theories in HOL.
+
+The general approach to work with HOL is that we can first create an empty new theory,
+then optionally import existing theories (equivalent to libraries in other languages), 
+and then we can make new definitions and/or define and prove new theorems under this theory.
+After we are done with this theory, we will be able to export it and use it as a 
+library when we are making other new theories. 
+
+    \subsection{Cost models for $\lambda$-Calculus}
+\paragraph{The $\lambda$-calculus} is a model of computation that expresses computation in a mathematical manner 
+by the use of function abstraction and application over variables using variable binding and substitution.
+The strategies we use to reduce terms within $\lambda$-calculus are called evaluation strategies.
+Different evaluation strategies will result in different evaluation steps, which then leads to different costs.
+As a result, they will need different cost models. 
+
+\paragraph{Cost models for $\lambda$-Calculus} Over the years, there has been a lot of work on creating formal cost models for 
+	computation~\cite{DBLP:journals/entcs/Accattoli18, DBLP:journals/pacmpl/HackettH19, 
+	DBLP:journals/igpl/BucciarelliKV17, DBLP:conf/popl/MoranS99, 
+	DBLP:journals/mscs/Carvalho18}. 
+    
+    (In)Efficiency and Reasonable Cost Models~\citep{DBLP:journals/entcs/Accattoli18} by Accattoli lays a solid groundwork about cost models which clears the common confusion 
+    about what it means for an evaluation strategy to be \emph{reasonable}, \emph{efficient} and \emph{standard}.
+    Accattoli points out that the key features for reasonable strategies are termination and sub-term property.
+    He then represents the back-and-forth simulations between $\lambda$-calculus and Turing machines after 
+    introducing cost models for Turing machines and $\lambda$-calculus and their properties. 
+    Between the two directions of simulations, 
+    simulating $\lambda$-calculus using Turing machines is more complicated due to the size explosion resulting from $\beta$-reduction.
+    After this, Accattoli introduces useful sharing and discusses about the optimisation strategies to improve the efficiency of 
+    reasonable cost models. The strategies includes optimal sequential evaluation, optimal parallel evaluation, sharing of sub-terms and sharing 
+    of computations and reasonable sharing of computations. 
+    In the end, the relationship between being standard and reasonable is discussed through explanation about 
+    why leftmost-outermost strategy is reasonable.
+    
+    The models from the other papers mentioned earlier have different trade-offs between the accuracy of the bounds 
+	they provide and the difficulty of using the model. Formalising these models will provide 
+	a deeper understanding of their trade-offs and help in identifying their limitations.
+	This will provide an insight for creating further models that combine the benefit of 
+	the existing ones. Such benefits include tighter upper and lower bounds for 
+	the estimated cost as well as simplifying the use of the model itself.
+
+    \subsection{Formally verified cost models}
+	In the recent years, there have been exciting developments in the use of 
+	interactive theorem provers for proving computational complexity of programs, 
+	such as intersection types verified in Agda ~\cite{DBLP:journals/igpl/BucciarelliKV17}
+	and verified programming of Turing machines in Coq~\cite{DBLP:conf/cpp/0002KW20}.
+
+    The verified programming of Turing machines in Coq presents a framework for the verified programming of multi-tape Turing machines in Coq.
+    The implementation includes four layers of abstractions, named as L0 - L3 from low to high. The highest abstraction L3 allows a user to 
+    implement nontrivial algorithms as Turing machines and verify their correctness, as well as time and space complexity compositionally. 
+    The project also includes case studies, where they verify a translation from multi-tape to single-tape machines as well as a universal Turing machine, both 
+    with polynomial time overhead and constant factor space overhead.
+
+    As one would guess, there are also ones about formalisation of Lambda calculus.
+    One of our interest is Formal Small-Step Verification of a Call-by-Value Lambda Calculus
+    Machine~\cite{DBLP:conf/aplas/KunzeS018}, which provides a formal verification of 
+    an abstract machine for a call-by-value $\lambda$-calculus with de Bruijn terms, simple substitution, and small-step semantics.
+    
+    With this groundwork, The Weak Call-by-value Lambda-calculus is reasonable for both time and space~\cite{DBLP:journals/pacmpl/ForsterKR20} 
+    by Forster, Kunze and Roth is then published.
+    They prove that the weak call-by-value $\lambda$-calculus (\textbf{L}) is a reasonable machine with respect to the natural 
+    time and space measures and enables the formal verification of complexity-theoretic proofs concerning complexity classes, both on paper and in proof assistants. 
+    They prove the reasonability of weak call-by-value $\lambda$-calculus by verifying the both ways simulation relation between \textbf{L} and Turing machines. 
+    The complicated direction, which is simulating \textbf{L} using Turing machines, is defined and verified by interleaving two simulation 
+    strategies. These two simulation strategies are called substitution-based strategy and heap-based strategy respectively. The former simulates a 
+    reduction sequence naively as given by the reduction rules of \textbf{L}. 
+    The latter uses closures and keep track of the values assigned to variables in an environment instead of 
+    executing any substitution if a $\beta$-reduction is simulated and thus allows for structure sharing. 
+    In more detail, two abstract machines implementing these strategies 
+    are introduced in order to analyse these strategies on a more semantic level. 
+Their work is exciting and brings potential future work including: 
+\begin{enumerate}
+    \item Extending to sublinear time or space classes;
+    \item Covering more $\lambda$-calculi with different evaluation strategies;
+    \item Mechanising basic complexity theory;
+    \item Investigating whether the result ($P \subseteq PSPACE$) can be proved without reference to Turing machines, 
+    for instance by implementing the space-aware interleaving simulation in a universal $\lambda$-term;
+    \item Investigating whether these exists a higher-order interpretation of space complexity that does not exhibit (exponential) size explosion. 
+\end{enumerate}
+
+
+    Building on top of this work,
+    A Mechanised Proof of the Time Invariance Thesis for the Weak Call-By-Value
+               $\lambda$-Calculus~\cite{DBLP:conf/itp/0002KSW21} 
+    is published by Forster, Kunze, Smolka, and Wuttke in 2021.
+    In this paper, they achieve the following:
+    \blockquote{\textit{We have presented the first mechanised proof of an instance of the time invariance thesis, 
+    connecting L with Turing machines with a polynomial overhead in time. We prove two variants, respectively concerned 
+    with simulation of one model of computation on the other, and with the computability of relations on boolean strings.}}
+    This verified equivalence (in time) between L and Turing machine
+    gives us the flexibility of choosing between L and Turing machines when we need to prove the time 
+    invariance thesis for a different model of computation, depending on which one is more suitable. 
+    Although this is an extension of The Weak Call-by-value Lambda-calculus is reasonable for both time and space~\cite{DBLP:journals/pacmpl/ForsterKR20}, it does not close all the gaps. 
+    Most of the future work from the previous paprer still remains open; on top of that, this paper 
+    only provides the proof for the time invariance thesis for \textbf{L} and doesn't cover space complexity, 
+    which is another potential future direction. 
+    The framework provided by this paper can also be simplified further by developing an automatic generation 
+    of correctness proofs using meta-programming tools for Coq, however, we will not consider this as part of 
+    potential future work we would do as it will not be as creative and we are using HOL instead of Coq.
+
+\newpage
+
+\section{Methodology}
+
+As mentioned earlier, pen-and-paper proofs tend to be error-prone. 
+Thus in order to provide and verify an effective cost model for Lambda calculus, 
+we will need to use interactive theorem provers. That been said, starting from 
+theorem prover directly is not the most efficient way as the mechanisation itself 
+is often complicated and hard for human to organise thoughts in there directly with the code. 
+Thus we will first come up with a pen-and-paper proof as it is more abstract and easier 
+to understand for human. We will then encode this proof in the interactive theorem prover 
+of choice (HOL) and show that it is in fact machine checkable and thus correct. 
+
+The experiment objects will include $\lambda$-calculus with different evaluation strategies:
+weak call-by-value, call-by-value and call-by-push-value~\cite{DBLP:conf/tlca/Levy99}. 
+We will use Turing machine as the intermediate model of computation to verify our cost model.
+On top of that, we can use verified compiler to ensure that the complexity is preserved during 
+compilation. 
+
+When we manage to obtain the verified cost model, we are able to use it to formally verify 
+functional programs and evaluate its effectiveness. 
+
+\newpage 
+
+\section{Research Plan}
+The aim of this research is to develop a formally verified effective cost model for $\lambda$-calculus.
+We propose the following research plan. 
+Note that subsection~\ref{4.0} talks about the relevant research work 
+we have done so far by the point of the write-up of this proposal. 
+From subsection~\ref{4.1} onwards, we then introduce the detailed research plan 
+we have for the future. 
+
+Potential publication in first year could include a survey paper and/or a 
+small extension on subsection~\ref{4.0}. From subsection~\ref{4.1} onwards,
+each subsection could result in half to one publication.
+
+\setcounter{subsection}{-1}
+
+\subsection{Porting Existing Formal Verification}
+\label{4.0}
+At this stage, we port the Coq formalisation of a Call-by-value 
+$\lambda$-calculus with small-step semantics~\cite{DBLP:conf/aplas/KunzeS018}
+into HOL. 
+
+We first make sure that we fully understanding the paper and the published 
+Coq formalisation by reading them multiple times and discussing them
+during the project meetings. In order to look into the detailed 
+proof procedure, we first learn basic syntax, tactics and theorems of Coq by going through Coq documents 
+and libraries. We then install the required version of Coq on our machine 
+and step through the proofs to ensure that we understand how the 
+pen-and-paper proof is translated into Coq. 
+
+After all these preparation, we carry out the translation
+from the given Coq code into HOL manually. 
+
+This exercise helps us to better understand the published work 
+and enables us to reuse the relevant proofs in HOL if needed. 
+
+\subsection{Development of a Theoretical Model}
+\label{4.1}
+	We plan to start by creating a pen-and-paper generalisation of a 
+	recently developed effective cost model for weak call-by-value 
+	$\lambda$-calculus~\cite{DBLP:journals/pacmpl/ForsterKR20}.
+	Our generalisation will extend the current model to the full call-by-value $\lambda$-calculus
+    and a call-by-push-value $\lambda$-calculus. 
+    We will compare the two models to see which one will be more suitable:
+    effective and can be interpreted into HOL without too much hassle. 
+    In the case we can't decide between the two, we go to the next stage 
+    with both models and figure out which one is better along 
+    the way of formalisation. 
+
+\subsection{Formal Verification of the Model.}
+	
+The verification tool we propose to use here is HOL, 
+so that we can extend and further develop existing work in HOL.
+ In more details, there exist models for $\lambda$-calculus and Turing machines 
+ as well as partial proofs of their equivalence. I have worked on this formalisation 
+ project in the past, which will ease completing this task.
+
+This stage includes three essential steps in order to formally 
+verify the cost model developed by pen-and-paper.
+First, we will extend the existing $\lambda$-calculus and Turing machines 
+models that are formalised in HOL. Then, we will extend and verify 
+the \emph{simulation relation} from $\lambda$-calculus to Turing machines in HOL. 
+This verification ensures that programs written in
+$\lambda$-calculus can be converted into Turing machines while preserving 
+the complexity.
+Finally, we will verify our cost model by comparing it to the existing cost 
+models of Turing machines through our simulation relation.  
+ 
+At that stage, we will be ready to apply our cost model to verify programs written 
+in $\lambda$-calculus.
+   
+\subsection{Formal Verification of Efficient Compilers.}
+	
+	The functional programming language CakeML~\cite{CakeML} is accompanied 
+	by a verified compiler. We plan to use our cost model to extend the 
+	guarantees provided by CakeML's verified compiler to also ensure 
+	that the complexity of programs is preserved during compilation.
+
+    This will provide a formal proof that the CakeML compiler maintains
+	the computational complexity of programs. 
+    Together with the verification of our cost model in HOL, we can then 
+    say that we have obtained a fully verified cost model from the level 
+    of specification down to the level of compiled code. 
+
+\subsection{Application of the Model.}
+	
+	At this stage, we will have a cost model for a functional programming language as
+	well as formal proofs that this model's complexity is maintained all 
+	the way down to Turing machines. The final step of this project will be 
+	to write functional programs and formally verify their computational complexity. 
+
+
+\newpage 
+
+\section{Conclusion}
+
+$\lambda$-calculus is not only a fundamental model of computation but also 
+an important mathematical formal system. It is an essential tool for 
+both computer scientists and mathematicians, so having a verified effective
+cost model for it has the following significance:
+\begin{enumerate}
+	\item Formally verifying the correctness of programs is important, however,  
+	it is not always sufficient. For many applications, it is vital to also verify 
+	that they fall in a certain complexity class. One example of such applications 
+	is cryptographic protocols for which the correctness argument fundamentally 
+	relies on the hardness of decrypting information. Another such example is the 
+	assumption that compilers do not affect the asymptotic complexity of the programs 
+	they compile. For instance, programmers often implicitly assume that if they write 
+	a program that runs in linear time, the compiled machine 
+	code will also run in linear time. Verifying compiler correctness is therefore not 
+	sufficient. One also needs to verify that it does not change the asymptotic complexity 
+	of the programs it compiles.
+	
+	Being able to compute the complexity of execution strategies for 
+	$\lambda$-calculus provides the necessary infrastructure for formally reasoning about
+	the complexity of programs on an abstract level. 
+	This provides higher assurance in the complexity models used.
+	\item Cost models developed on pen and paper are not machine checked thus creating the possibility of error,
+	 whilst a verified cost model would be guaranteed to be correct. 
+	There has been some recent work on using 
+	interactive theorem provers for estimating the computational complexity of programs.
+	This is an active area of research with many open problems, such as 
+	creating tighter estimates of complexity which would provide higher assurance in the 
+	areas described above.
+\end{enumerate}
+
+This project aims to extend the work~\cite{DBLP:journals/pacmpl/ForsterKR20} and \cite{DBLP:conf/itp/0002KSW21} 
+by providing a new effective verified cost model for call-by-value $\lambda$-calculus in HOL.
+This will contribute significantly to the development of cost models for functional programming languages 
+as call-by-value is one of the most common evaluation strategies. This also opens gate to developing 
+a verified cost model for call-by-push-value $\lambda$-calculus.
+
+\newpage 
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
