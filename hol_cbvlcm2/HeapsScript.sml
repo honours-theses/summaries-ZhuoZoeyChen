@@ -156,56 +156,40 @@ Theorem nth_error_unlinedEnv:
   ∀hImpl C H a E n e.
     representsEnv hImpl C H a E ⇒
     nth_error n E = SOME e ⇒
-    (∃g. lookup hImpl H a n = SOME g ∧
-         representsClos hImpl C H g e)
+    ∃g. lookup hImpl H a n = SOME g ∧
+        representsClos hImpl C H g e
 Proof
-  Induct_on `n` >> rw[]
-  >- cheat
-  >> cheat
+  Induct_on `n` >> rw[] (* 2 *)
+  >- (rw[Once lookup] >> fs[Once representsEnv_cases]
+      >- (rw[] >> fs[Once nth_error])
+      >> rw[] >> fs[Once nth_error] >> rw[] >>
+      rw[Once representsClos_cases])
+  >> qpat_x_assum `representsEnv _ _ _ _ _` mp_tac >>
+  rw[Once representsEnv_cases, Once lookup]
+  >- (rw[] >> fs[Once nth_error])
+  >> rw[] >> fs[Once nth_error] >>
+  metis_tac[]
 QED
 
-
-(*
-  Lemma nth_error_unlinedEnv H a E n e :
-    a ≫E_H E -> E.[n] = Some e -> exists g, H.[a,n] = Some g /\ g ≫C_H e.
-  Proof.
-    induction n in e,a,E|-*;cbn;intros uE eq.
-    -inv uE. congruence. inv eq. rewrite H0. eauto.
-    -inv uE. congruence. rewrite H0. eapply IHn. all:eauto.
-  Qed.
-  Lemma lookup_unlinedEnv H a E n g :
-    a ≫E_H E -> H.[a,n] = Some g -> exists e, E.[n] = Some e /\ g ≫C_H e.
-  Proof.
-    induction n in g,a,E|-*;cbn;intros uE eq.
-    -inv uE;rewrite H0 in *. all:inv eq. eauto.
-    -inv uE;rewrite H0 in *. congruence. now eauto.
-  Qed.
-End heap.
-
-  Notation "H .[ a , n ]" := (lookup H a n) (at level 1, format "H '.[' a ',' n ]").
-
-Hint Constructors representsClos representsEnv.
-
-Instance heapImpl PA: heap PA :=
-  {|
-    Heap:=list ((PA*nat)*nat);
-    HA := nat;
-    put H g a:=(H++[(g,a)],S (length H));
-    get H a := match a with
-                   | 0 => Some None
-                   | S a =>
-                     match H.[a] with
-                     | Some (g,b) => Some (Some (g,b))
-                     | None => None
-                     end
-                   end
-  |}.
-Proof.
-  -intros ? ? ? ? ? [= <- <-]. rewrite nth_error_app2. now rewrite <- minus_n_n. reflexivity.
-  -intros ? ? ? ? ? [= <- <-] [|] neq. easy. destruct nth_error as [[? ?]|] eqn:eq. 2:easy.
-   rewrite nth_error_app1;eauto using nth_error_Some_lt. now rewrite eq.
-Defined
-*)
+Theorem lookup_unlinedEnv:
+  ∀hImpl C H a E n g.
+    representsEnv hImpl C H a E ⇒
+    lookup hImpl H a n = SOME g ⇒
+    ∃e. nth_error n E = SOME e ∧
+        representsClos hImpl C H g e
+Proof
+  Induct_on `n` >> rw[] (* 2 *)
+  >- (rw[Once nth_error] >> fs[Once representsEnv_cases]
+      >- (rw[] >> fs[Once lookup] >> gvs[])
+      >> rw[] >> fs[Once lookup] >> rw[] >> gvs[] >>
+      rw[Once nth_error, Once representsClos_cases])
+  >> qpat_x_assum `representsEnv _ _ _ _ _` mp_tac >>
+  rw[Once representsEnv_cases, Once nth_error]
+  >- (rw[] >> fs[Once lookup])
+  >> qpat_x_assum `lookup _ _ _ _ = _` mp_tac >>
+  rw[Once lookup, Once nth_error] >>
+  metis_tac[]
+QED
 
 Definition heapImpl:
   heapImpl =
