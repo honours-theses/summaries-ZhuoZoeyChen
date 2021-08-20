@@ -1,3 +1,4 @@
+open HolKernel Parse boolLib bossLib;
 open PrelimsTheory;
 open ClosuresTheory;
 open CodesTheory;
