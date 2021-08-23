@@ -23,10 +23,9 @@ Arguments lamC {_} _.
 Arguments appC {_}.
 *)
 
-(*
-Code : Com list;
-PA   : num;
-*)
+Type Code = ``:('a Com) list``;
+
+Type PA = ``:num``;
 
 Datatype:
 	code =
