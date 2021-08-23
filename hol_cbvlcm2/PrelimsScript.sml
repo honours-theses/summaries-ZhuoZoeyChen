@@ -257,8 +257,10 @@ QED
 (* https://coq.inria.fr/library/Coq.Lists.List.html#Forall2 *)
 
 Inductive Forall2:
+[~nil:]
 	(∀R. Forall2 R [] []) ∧
-	∀x y l l' R. R x y ∧ Forall2 R l l' ⇒ Forall2 R (x::l) (y::l')
+[~cons:]
+	(∀x y l l' R. R x y ∧ Forall2 R l l' ⇒ Forall2 R (x::l) (y::l'))
 End
 
 Theorem Forall2_impl:

@@ -17,6 +17,7 @@ Datatype:
   Clo = closC Pro (Clo list)
 End
 val _ = export_rewrites ["Clo_size_def"]
+(* Notation "P / E" := (closC P E). *)
 (* With closures we can refine the naive stack machine
    so that no substitution operation is needed.
 *)
